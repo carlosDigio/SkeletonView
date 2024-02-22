@@ -105,7 +105,8 @@ private extension UIView {
         }) { subview in
             subview.recursiveShowSkeleton(skeletonConfig: config)
         }
-
+        layoutSkeletonIfNeeded()
+        
         if let root = root {
             _flowDelegate?.didShowSkeletons(rootView: root)
         }
@@ -126,7 +127,8 @@ private extension UIView {
         }) { subview in
             subview.recursiveUpdateSkeleton(skeletonConfig: config)
         }
-
+        layoutSkeletonIfNeeded()
+        
         if let root = root {
             _flowDelegate?.didUpdateSkeletons(rootView: root)
         }
