@@ -11,13 +11,16 @@ import UIKit
 extension UICollectionView: CollectionSkeleton {
 
     var estimatedNumberOfRows: Int {
-        guard let flowlayout = collectionViewLayout as? UICollectionViewFlowLayout else { return 0 }
-        switch flowlayout.scrollDirection {
+        guard let flowLayout = collectionViewLayout as? UICollectionViewFlowLayout else { return 0 }
+        let itemSize = flowLayout.itemSize
+        // Avoid division by zero (can happen with self-sizing before first layout pass)
+        guard itemSize.width > 0 && itemSize.height > 0 else { return 0 }
+        switch flowLayout.scrollDirection {
         case .vertical:
-            return Int(ceil(frame.height / flowlayout.itemSize.height))
+            return Int(ceil(frame.height / itemSize.height))
         case .horizontal:
-            return Int(ceil(frame.width / flowlayout.itemSize.width))
-        default:
+            return Int(ceil(frame.width / itemSize.width))
+        @unknown default:
             return 0
         }
     }

@@ -104,7 +104,7 @@ Apenas **3** passos necessários para usar `SkeletonView`:
 import SkeletonView
 ```
 
-**2.** Agora, especifíque quais views serão `skeletonables`. Você consegue fazer isso de duas formas:
+**2.** Agora, especifíque quais views serão `skeletonable`. Você consegue fazer isso de duas formas:
 
 **Usando código:**
 ```swift

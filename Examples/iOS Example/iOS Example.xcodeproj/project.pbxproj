@@ -3,10 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		78D31E6E2E9FA06600D4929E /* ExamplesMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E6D2E9FA06600D4929E /* ExamplesMenuViewController.swift */; };
+		A1B2C3D426D0D0D000AAAAAA /* DiffableExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D326D0D0D000AAAAAA /* DiffableExamples.swift */; };
 		E21D8BB727888D050041DBCE /* UITextViewByCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21D8BB627888D050041DBCE /* UITextViewByCodeViewController.swift */; };
 		F556F5C026CD20A300A80B83 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F556F5B726CD20A300A80B83 /* ViewController.swift */; };
 		F556F5C126CD20A300A80B83 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F556F5B826CD20A300A80B83 /* Assets.xcassets */; };
@@ -58,6 +60,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		78D31E6D2E9FA06600D4929E /* ExamplesMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamplesMenuViewController.swift; sourceTree = "<group>"; };
+		A1B2C3D326D0D0D000AAAAAA /* DiffableExamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffableExamples.swift; sourceTree = "<group>"; };
 		E21D8BB627888D050041DBCE /* UITextViewByCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITextViewByCodeViewController.swift; sourceTree = "<group>"; };
 		F556F59F26CD201B00A80B83 /* iOS Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "iOS Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F556F5B726CD20A300A80B83 /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -104,16 +108,18 @@
 		F556F5B626CD20A300A80B83 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				F556F5BD26CD20A300A80B83 /* AppDelegate.swift */,
+				F556F5B826CD20A300A80B83 /* Assets.xcassets */,
 				F556F6E626CE813F00A80B83 /* Cell.swift */,
 				F556F6EC26CE813F00A80B83 /* Constants.swift */,
+				A1B2C3D326D0D0D000AAAAAA /* DiffableExamples.swift */,
+				78D31E6D2E9FA06600D4929E /* ExamplesMenuViewController.swift */,
 				F556F6ED26CE813F00A80B83 /* HeaderFooterSection.swift */,
-				F556F5B726CD20A300A80B83 /* ViewController.swift */,
-				E21D8BB627888D050041DBCE /* UITextViewByCodeViewController.swift */,
-				F556F5B826CD20A300A80B83 /* Assets.xcassets */,
+				F556F5BE26CD20A300A80B83 /* Info.plist */,
 				F556F5B926CD20A300A80B83 /* LaunchScreen.storyboard */,
 				F556F5BB26CD20A300A80B83 /* Main.storyboard */,
-				F556F5BD26CD20A300A80B83 /* AppDelegate.swift */,
-				F556F5BE26CD20A300A80B83 /* Info.plist */,
+				E21D8BB627888D050041DBCE /* UITextViewByCodeViewController.swift */,
+				F556F5B726CD20A300A80B83 /* ViewController.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -156,8 +162,9 @@
 		F556F59726CD201B00A80B83 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1250;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					F556F59E26CD201B00A80B83 = {
 						CreatedOnToolsVersion = 12.5.1;
@@ -241,8 +248,10 @@
 				F556F5C426CD20A300A80B83 /* AppDelegate.swift in Sources */,
 				F556F6EE26CE813F00A80B83 /* Cell.swift in Sources */,
 				F556F5C026CD20A300A80B83 /* ViewController.swift in Sources */,
+				78D31E6E2E9FA06600D4929E /* ExamplesMenuViewController.swift in Sources */,
 				F556F6F026CE813F00A80B83 /* HeaderFooterSection.swift in Sources */,
 				E21D8BB727888D050041DBCE /* UITextViewByCodeViewController.swift in Sources */,
+				A1B2C3D426D0D0D000AAAAAA /* DiffableExamples.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +322,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -374,6 +384,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -399,7 +410,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "$(SRCROOT)/Sources/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -418,7 +428,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "$(SRCROOT)/Sources/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

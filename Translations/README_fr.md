@@ -56,6 +56,7 @@ Profitez-en! 🙂
   - [🔬 Débugger](#-débugger)
   - [📚 Documentation](#-documentation)
   - [📋 Versions OS et SDK supportées](#-versions-os-et-sdk-supportées)
+  - [🧩 Diffable Data Source](#-diffable-data-source)
 - [📬 Prochaines étapes](#-prochaines-étapes)
 - [❤️ Contribuer](#️-contribuer)
         - [Projet généré avec SwiftPlate](#projet-généré-avec-swiftplate)
@@ -200,81 +201,108 @@ Vous pouvez modifier la configuration du squelette à tout moment comme sa coule
 
  Maintenant, `SkeletonView` est compatible avec `UITableView` et `UICollectionView`.
 
-#### UITableView
+## 🧩 Diffable Data Source
 
-Si vous voulez montrer le squelette dans un `UITableView`, vous devez vous conformer au protocole `SkeletonTableViewDataSource`.
+Support de `UITableViewDiffableDataSource` et `UICollectionViewDiffableDataSource` (iOS/tvOS 13+) via :
 
-``` swift
-public protocol SkeletonTableViewDataSource: UITableViewDataSource {
-    func numSections(in collectionSkeletonView: UITableView) -> Int
-    func collectionSkeletonView(_ skeletonView: UITableView, numberOfRowsInSection section: Int) -> Int
-    func collectionSkeletonView(_ skeletonView: UITableView, cellIdentifierForRowAt indexPath: IndexPath) -> ReusableCellIdentifier
-    func collectionSkeletonView(_ skeletonView: UITableView, identifierForHeaderInSection section: Int) -> ReusableHeaderFooterIdentifier?
-    func collectionSkeletonView(_ skeletonView: UITableView, identifierForFooterInSection section: Int) -> ReusableHeaderFooterIdentifier?
+* `SkeletonDiffableTableViewDataSource`
+* `SkeletonDiffableCollectionViewDataSource`
+
+Ces helpers coordonnent l'affichage du skeleton avec les snapshots diffables :
+* Afficher un skeleton pendant le chargement.
+* Le garder si un snapshot vide est appliqué pendant le chargement.
+* Le cacher automatiquement après le premier snapshot non-vide (ou quand vous appelez `endLoading`).
+* Placeholders inline optionnels (`useInlinePlaceholders`) sans remplacer le data source interne (préserve la structure des sections / headers).
+* Redémarrer un cycle de chargement avec `resetAndShowSkeleton` (pull‑to‑refresh complet).
+
+#### Exemple UITableView (placeholders inline)
+```swift
+@available(iOS 13.0, *)
+final class MaTableVC: UIViewController {
+    enum Section { case main }
+    struct Row: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var tableView: UITableView!
+    private var ds: SkeletonDiffableTableViewDataSource<Section, Row>!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.isSkeletonable = true
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        ds = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = row.title
+            return cell
+        }
+        ds.configurePlaceholderCell = { tv, indexPath in
+            let c = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            c.isSkeletonable = true
+            c.textLabel?.text = "Chargement…"
+            c.textLabel?.alpha = 0.55
+            return c
+        }
+        ds.beginLoading()
+        charger()
+    }
+    private func charger() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let data = (0..<10).map { Row(title: "Ligne \($0)") }
+            var snap = NSDiffableDataSourceSnapshot<Section, Row>()
+            snap.appendSections([.main])
+            snap.appendItems(data)
+            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+        }
+    }
 }
 ```
 
-Comme vous pouvez le voir, ce protocole hérite de `UITableViewDataSource`, vous pouvez donc remplacer ce protocole par le protocole squelette.
-
-Ce protocole a une implémentation par défaut:
-
-``` swift
-func numSections(in collectionSkeletonView: UITableView) -> Int
-// Par défaut: 1
-```
-
-``` swift
-func collectionSkeletonView(_ skeletonView: UITableView, numberOfRowsInSection section: Int) -> Int
-// Par défaut:
-// Il calcule le nombre de cellules nécessaires pour remplir l'ensemble du tableau
-```
-
-``` swift
-func collectionSkeletonView(_ skeletonView: UITableView, identifierForHeaderInSection section: Int) -> ReusableHeaderFooterIdentifier?
-// Par défaut: nil
-```
-
-``` swift
-func collectionSkeletonView(_ skeletonView: UITableView, identifierForFooterInSection section: Int) -> ReusableHeaderFooterIdentifier?
-// Par défaut: nil
-```
-
-Il n'y a qu'une seule méthode à mettre en œuvre pour faire connaître au Squelette l'identifiant de la cellule. Cette méthode n'a pas d'implémentation par défaut :
-``` swift
- func collectionSkeletonView(_ skeletonView : UITableView, cellIdentifierForRowAt indexPath : IndexPath) -> ReusableCellIdentifier
-```
-
-**Exemple**
-``` swift
- func collectionSkeletonView(_ skeletonView : UITableView, cellIdentifierForRowAt indexPath : IndexPath) -> ReusableCellIdentifier {
-    return "CellIdentifier".
-}
- ```
-
-> **IMPORTANT!**
-> Si vous utilisez des cellules redimensionnables (`tableView.rowHeight = UITableViewAutomaticDimension` ), il est obligatoire de définir la `estimatedRowHeight`.
-
-👩🏼 **Comment préciser quels éléments sont squelettisables ?
-
-Voici une illustration qui montre comment vous devez spécifier quels éléments sont squelettisables lorsque vous utilisez une `UITableView` :
-
-![](../Assets/tableview_scheme.png)
-
-Comme vous pouvez le voir, nous devons faire `skeletonable` la tableview, la cellule et les éléments de l'interface visuelle, mais nous n'avons pas besoin de faire `skeletonable` le `contentView`.
-
-#### UICollectionView
-
-Pour ```UICollectionView```, vous devez conformer le protocole `SkeletonCollectionViewDataSource`.
-
-``` swift
-public protocol SkeletonCollectionViewDataSource: UICollectionViewDataSource {
-    func numSections(in collectionSkeletonView: UICollectionView) -> Int
-    func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int
-    func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> ReusableCellIdentifier
+#### Exemple UICollectionView (placeholders inline)
+```swift
+@available(iOS 13.0, *)
+final class MaCollectionVC: UIViewController {
+    enum Section { case main }
+    struct Item: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var collectionView: UICollectionView!
+    private var ds: SkeletonDiffableCollectionViewDataSource<Section, Item>!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        collectionView.isSkeletonable = true
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        ds = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
+            let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            return cell
+        }
+        ds.configurePlaceholderCell = { cv, indexPath in
+            let c = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            c.isSkeletonable = true
+            c.backgroundColor = .secondarySystemFill
+            return c
+        }
+        ds.beginLoading()
+        charger()
+    }
+    private func charger() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let items = (0..<12).map { Item(title: "Item \($0)") }
+            var snap = NSDiffableDataSourceSnapshot<Section, Item>()
+            snap.appendSections([.main])
+            snap.appendItems(items)
+            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+        }
+    }
 }
 ```
 
-Le reste du processus ressemble à une `UITableView`.
+#### API
+```swift
+beginLoading(showSkeleton: Bool = true)
+endLoading()
+endLoadingAndApply(_:animatingDifferences:completion:)
+applySnapshot(_:animatingDifferences:completion:)
+resetAndShowSkeleton(keepSections:showSkeleton:animatingDifferences:)
+configurePlaceholderCell // closure pour personnaliser la cellule placeholder
+```
+> Notes : placeholders inline désactivés par défaut; iOS/tvOS 13+.
 
 ### 📰 Texte multiligne
 

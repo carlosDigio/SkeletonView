@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file
 ### Next version
 
 #### 🙌 New
+* Added support for UITableViewDiffableDataSource via `SkeletonDiffableTableViewDataSource` (skeleton lifecycle orchestration with diffable snapshots).
+* Added support for UICollectionViewDiffableDataSource via `SkeletonDiffableCVDataSource` (mirrors table diffable integration for collection views).
 
 #### 🔬 Improvements
 * [**369**](https://github.com/Juanpe/SkeletonView/pull/369): remove useless corner radius constraint - [@Juanpe](https://github.com/Juanpe)

@@ -17,6 +17,7 @@
   • <a href="#-guides">Guides</a>
   • <a href="#-installation">Installation</a>
   • <a href="#-usage">Usage</a>
+  • <a href="#-diffable-datasource">Diffable Data Source</a>
   • <a href="#-miscellaneous">Miscellaneous</a>
   • <a href="#️-contributing">Contributing</a>
 </p>
@@ -41,6 +42,7 @@ Enjoy it! 🙂
   - [🎨 Custom colors](#-custom-colors)
   - [🏃‍♀️ Animations](#️-animations)
   - [🏄 Transitions](#-transitions)
+- [🧩 Diffable Data Source](#-diffable-datasource)
 - [✨ Miscellaneous](#-miscellaneous)
 - [❤️ Contributing](#️-contributing)
 - [📢 Mentions](#-mentions)
@@ -104,7 +106,7 @@ Only **3** steps needed to use `SkeletonView`:
 import SkeletonView
 ```
 
-2️⃣ Now, set which views will be `skeletonables`. You achieve this in two ways:
+2️⃣ Now, set which views will be `skeletonable`. You achieve this in two ways:
 
 **Using code:**
 ```swift
@@ -469,6 +471,127 @@ The default value is  `crossDissolve(0.25)`
 </td>
 </tr>
 </table>
+
+
+## 🧩 Diffable Data Source
+
+SkeletonView supports `UITableViewDiffableDataSource` and `UICollectionViewDiffableDataSource` (iOS/tvOS 13+) via the helpers:
+
+* `SkeletonDiffableTableViewDataSource`
+* `SkeletonDiffableCollectionViewDataSource`
+
+They coordinate the skeleton lifecycle with diffable snapshots so you can:
+* Show a skeleton while loading.
+* Keep skeleton visible for empty snapshots during loading.
+* Auto-hide when first non-empty snapshot is applied (or manually by calling `endLoading`).
+* Optionally display inline placeholder rows/items (`useInlinePlaceholders`) without swapping to the internal dummy data source.
+
+#### UITableView example (with inline placeholders)
+```swift
+@available(iOS 13.0, *)
+final class MyTableVC: UIViewController {
+    enum Section { case main }
+    struct Row: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var tableView: UITableView!
+    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.isSkeletonable = true
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = item.title
+            return cell
+        }
+        // Configure placeholder cells shown while loading & snapshot empty
+        dataSource.configurePlaceholderCell = { tv, indexPath in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = "Loading…"
+            cell.textLabel?.alpha = 0.55
+            return cell
+        }
+        dataSource.beginLoading()
+        fetch()
+    }
+
+    private func fetch() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let rows = (0..<10).map { Row(title: "Row \($0)") }
+            var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+            snapshot.appendSections([.main])
+            snapshot.appendItems(rows)
+            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+        }
+    }
+}
+```
+
+#### UICollectionView example (with inline placeholders)
+```swift
+@available(iOS 13.0, *)
+final class MyCollectionVC: UIViewController {
+    enum Section { case main }
+    struct Item: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var collectionView: UICollectionView!
+    private var dataSource: SkeletonDiffableCollectionViewDataSource<Section, Item>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        collectionView.isSkeletonable = true
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        dataSource = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { collectionView, indexPath, item in
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            // configure real UI
+            return cell
+        }
+        dataSource.configurePlaceholderCell = { cv, indexPath in
+            let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.backgroundColor = .secondarySystemFill
+            return cell
+        }
+        dataSource.beginLoading()
+        fetch()
+    }
+
+    private func fetch() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let items = (0..<12).map { Item(title: "Item \($0)") }
+            var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+            snapshot.appendSections([.main])
+            snapshot.appendItems(items)
+            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+        }
+    }
+
+    @IBAction func refresh() {
+        dataSource.resetAndShowSkeleton(keepSections: true)
+        fetch()
+    }
+}
+```
+
+#### API summary
+```swift
+func beginLoading(showSkeleton: Bool = true)
+func endLoading()
+func endLoadingAndApply(_ snapshot: NSDiffableDataSourceSnapshot<SectionID, ItemID>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+func applySnapshot(_ snapshot: NSDiffableDataSourceSnapshot<SectionID, ItemID>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+func resetAndShowSkeleton(keepSections: Bool = true, showSkeleton: Bool = true, animatingDifferences: Bool = false)
+// Inline placeholder customization (enable with useInlinePlaceholders: true)
+var configurePlaceholderCell: ((UITableView, IndexPath) -> UITableViewCell)?
+var configurePlaceholderCell: ((UICollectionView, IndexPath) -> UICollectionViewCell)?
+```
+
+> Notes:
+> * Inline placeholders are OFF by default. Pass `useInlinePlaceholders: true` on creation.
+> * They keep section layout & headers visible while skeleton shimmer animates.
+> * `resetAndShowSkeleton` restarts a loading cycle (clears items, optionally preserves sections, shows skeleton, applies empty snapshot).
+> * iOS/tvOS 13+ only.
 
 
 ## ✨ Miscellaneous 

@@ -46,6 +46,7 @@
   * [Custom animations](#-custom-animations)
   * [Hierarchy](#-hierarchy)
   * [Debug](#-debug)
+* [Diffable Data Source](#-diffable-data-source)
 * [문서화](#-documentation)
 * [지원되는 OS와 SDK 버전](#-supported-os--sdk-versions)
 * [Next steps](#-next-steps)
@@ -171,71 +172,108 @@ avatarImageView.isSkeletonable = true
 
  현재, ```SkeletonView``` 는  ```UITableView``` 와 ```UICollectionView```에서 호환됩니다.
 
-#### UITableView
+## 🧩 Diffable Data Source
 
-만약 ```UITableView```에서 skeleton을 호출하고 싶다면, ```SkeletonTableViewDataSource``` protocol 을 구현하여야 합니다.
+`UITableViewDiffableDataSource` 와 `UICollectionViewDiffableDataSource` (iOS/tvOS 13+)를 skeleton 과 쉽게 연동할 수 있는 헬퍼:
 
-``` swift
-public protocol SkeletonTableViewDataSource: UITableViewDataSource {
-    func numSections(in collectionSkeletonView: UITableView) -> Int
-    func collectionSkeletonView(_ skeletonView: UITableView, numberOfRowsInSection section: Int) -> Int
-    func collectionSkeletonView(_ skeletonView: UITableView, cellIdentifierForRowAt indexPath: IndexPath) -> ReusableCellIdentifier
+* `SkeletonDiffableTableViewDataSource`
+* `SkeletonDiffableCollectionViewDataSource`
+
+핵심 기능:
+* 로딩 중 skeleton 표시
+* 로딩 상태에서 비어있는(snapshot empty) diffable snapshot 적용 시 skeleton 유지
+* 첫 번째 비어있지 않은(non‑empty) snapshot 적용 후 자동 숨김 (또는 직접 `endLoading()` 호출)
+* `useInlinePlaceholders` 로 섹션 구조를 유지하면서 placeholder 셀/아이템을 inline 으로 표시 (내부 dummy datasource 교체 없음)
+* `resetAndShowSkeleton` 으로 로딩 사이클 다시 시작 (풀투리프레시 등)
+
+#### UITableView 예시 (inline placeholder 사용)
+```swift
+@available(iOS 13.0, *)
+final class DiffableTableVC: UIViewController {
+    enum Section { case main }
+    struct Row: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var tableView: UITableView!
+    private var ds: SkeletonDiffableTableViewDataSource<Section, Row>!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.isSkeletonable = true
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        ds = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = row.title
+            return cell
+        }
+        ds.configurePlaceholderCell = { tv, indexPath in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = "로딩중…"
+            cell.textLabel?.alpha = 0.55
+            return cell
+        }
+        ds.beginLoading()
+        fetch()
+    }
+    private func fetch() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let rows = (0..<10).map { Row(title: "Row \($0)") }
+            var snap = NSDiffableDataSourceSnapshot<Section, Row>()
+            snap.appendSections([.main])
+            snap.appendItems(rows)
+            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+        }
+    }
 }
 ```
 
-해당 프로토클은 보시다시피  ```UITableViewDataSource```를 상속받아 구현하였으므로, skeleton의 protocol과 대체 가능합니다.
-
-프로토콜의 기본 구현은 다음과 같습니다:
-
-``` swift
-func numSections(in collectionSkeletonView: UITableView) -> Int
-// Default: 1
-```
-
-``` swift
-func collectionSkeletonView(_ skeletonView: UITableView, numberOfRowsInSection section: Int) -> Int
-// Default:
-// 전체 테이블 뷰를 채우는데 필요한 셀 수를 계산합니다
-```
-
-해당 메소드는 당신이 구현하여야할 cell identifier을 아는 경우에만 사용합니다, 해당 메소드는 기본으로 구현하지 않아도됩니다 :
-
- ``` swift
- func collectionSkeletonView(_ skeletonView: UITableView, cellIdentifierForRowAt indexPath: IndexPath) -> ReusableCellIdentifier
- ```
-
-**Example**
- ``` swift
- func collectionSkeletonView(_ skeletonView: UITableView, cellIdentifierForRowAt indexPath: IndexPath) -> ReusableCellIdentifier {
-    return "CellIdentifier"
-}
- ```
-
-> **중요!**
-> 만약 사이즈가 변하는 셀을 사용한다면 (`tableView.rowHeight = UITableViewAutomaticDimension` ),`estimatedRowHeight`를 무조건 정의해주세요.
-
-
-👩🏼‍🏫  **어떻게 특정 요소에 skeleton 을 지정할까요?**
-
-아래의 그림은 `UITableView` 에서 특정한 요소에 skeleton 을 지정하는 방법을 보여주는 이미지 입니다:
-
-![](../Assets/tableview_scheme.png)
-
-위의 이미지에서 보이듯, 테이블 뷰와 셀에 들어가는 UI 요소들에는 적용을 해야하지만, `contentView`에 skeleton을 적용할 필요는 없습니다.
-
-####  UICollectionView
-
- ```UICollectionView``` 에 적용을 하기 위해서는, ```SkeletonCollectionViewDataSource``` protocol 을 구현할 필요가 있습니다.
-
-``` swift
-public protocol SkeletonCollectionViewDataSource: UICollectionViewDataSource {
-    func numSections(in collectionSkeletonView: UICollectionView) -> Int
-    func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int
-    func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> ReusableCellIdentifier
+#### UICollectionView 예시 (inline placeholder 사용)
+```swift
+@available(iOS 13.0, *)
+final class DiffableCollectionVC: UIViewController {
+    enum Section { case main }
+    struct Item: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var collectionView: UICollectionView!
+    private var ds: SkeletonDiffableCollectionViewDataSource<Section, Item>!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        collectionView.isSkeletonable = true
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        ds = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
+            let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            return cell
+        }
+        ds.configurePlaceholderCell = { cv, indexPath in
+            let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.backgroundColor = .secondarySystemFill
+            return cell
+        }
+        ds.beginLoading()
+        fetch()
+    }
+    private func fetch() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let items = (0..<12).map { Item(title: "Item \($0)") }
+            var snap = NSDiffableDataSourceSnapshot<Section, Item>()
+            snap.appendSections([.main])
+            snap.appendItems(items)
+            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+        }
+    }
 }
 ```
 
-```UITableView``` 와 사용방법은 같습니다.
+#### API 요약
+```swift
+beginLoading(showSkeleton: Bool = true)
+endLoading()
+endLoadingAndApply(_:animatingDifferences:completion:)
+applySnapshot(_:animatingDifferences:completion:)
+resetAndShowSkeleton(keepSections:showSkeleton:animatingDifferences:)
+configurePlaceholderCell // inline placeholder 커스터마이징
+```
+> 메모: inline placeholders 기본 비활성 (useInlinePlaceholders: true 필요), iOS/tvOS 13+.
 
 ### 📰 Multiline text
 
