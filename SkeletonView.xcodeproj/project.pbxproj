@@ -7,8 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		784849312EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7848492E2EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift */; };
+		784849322EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7848492F2EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift */; };
+		784849332EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7848492E2EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift */; };
+		784849342EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7848492F2EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift */; };
 		78D31EC62E9FA0F900D4929E /* UIView+IBInspectable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E872E9FA0F900D4929E /* UIView+IBInspectable.swift */; };
-		78D31EC72E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8B2E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift */; };
 		78D31EC82E9FA0F900D4929E /* DispatchQueue+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E972E9FA0F900D4929E /* DispatchQueue+Extensions.swift */; };
 		78D31EC92E9FA0F900D4929E /* SkeletonTextLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E7C2E9FA0F900D4929E /* SkeletonTextLineHeight.swift */; };
 		78D31ECA2E9FA0F900D4929E /* SkeletonTableViewProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E752E9FA0F900D4929E /* SkeletonTableViewProtocols.swift */; };
@@ -68,10 +71,8 @@
 		78D31F002E9FA0F900D4929E /* UIView+AssociatedObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EB92E9FA0F900D4929E /* UIView+AssociatedObjects.swift */; };
 		78D31F012E9FA0F900D4929E /* SkeletonLayerBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EAC2E9FA0F900D4929E /* SkeletonLayerBuilder.swift */; };
 		78D31F022E9FA0F900D4929E /* SkeletonExtended.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8D2E9FA0F900D4929E /* SkeletonExtended.swift */; };
-		78D31F032E9FA0F900D4929E /* SkeletonDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8C2E9FA0F900D4929E /* SkeletonDiffableDataSource.swift */; };
 		78D31F042E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EA42E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift */; };
 		78D31F052E9FA0F900D4929E /* UIView+IBInspectable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E872E9FA0F900D4929E /* UIView+IBInspectable.swift */; };
-		78D31F062E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8B2E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift */; };
 		78D31F072E9FA0F900D4929E /* DispatchQueue+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E972E9FA0F900D4929E /* DispatchQueue+Extensions.swift */; };
 		78D31F082E9FA0F900D4929E /* SkeletonTextLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E7C2E9FA0F900D4929E /* SkeletonTextLineHeight.swift */; };
 		78D31F092E9FA0F900D4929E /* SkeletonTableViewProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E752E9FA0F900D4929E /* SkeletonTableViewProtocols.swift */; };
@@ -131,7 +132,6 @@
 		78D31F3F2E9FA0F900D4929E /* UIView+AssociatedObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EB92E9FA0F900D4929E /* UIView+AssociatedObjects.swift */; };
 		78D31F402E9FA0F900D4929E /* SkeletonLayerBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EAC2E9FA0F900D4929E /* SkeletonLayerBuilder.swift */; };
 		78D31F412E9FA0F900D4929E /* SkeletonExtended.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8D2E9FA0F900D4929E /* SkeletonExtended.swift */; };
-		78D31F422E9FA0F900D4929E /* SkeletonDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31E8C2E9FA0F900D4929E /* SkeletonDiffableDataSource.swift */; };
 		78D31F432E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D31EA42E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift */; };
 		F556F65D26CD3E3600A80B83 /* SkeletonDebugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F556F65C26CD3E3600A80B83 /* SkeletonDebugTests.swift */; };
 		F556F67626CD458500A80B83 /* SkeletonView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F556F59426CD1F3900A80B83 /* SkeletonView.framework */; platformFilter = maccatalyst; };
@@ -157,6 +157,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7848492E2EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableCollectionDataSource.swift; sourceTree = "<group>"; };
+		7848492F2EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableDataSource.swift; sourceTree = "<group>"; };
 		78D31E6F2E9FA0F900D4929E /* SkeletonAnimationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonAnimationBuilder.swift; sourceTree = "<group>"; };
 		78D31E712E9FA0F900D4929E /* SkeletonAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonAppearance.swift; sourceTree = "<group>"; };
 		78D31E732E9FA0F900D4929E /* SkeletonCollectionViewProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonCollectionViewProtocols.swift; sourceTree = "<group>"; };
@@ -177,8 +179,6 @@
 		78D31E872E9FA0F900D4929E /* UIView+IBInspectable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+IBInspectable.swift"; sourceTree = "<group>"; };
 		78D31E882E9FA0F900D4929E /* UIView+SKExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+SKExtensions.swift"; sourceTree = "<group>"; };
 		78D31E8A2E9FA0F900D4929E /* Deprecated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Deprecated.swift; sourceTree = "<group>"; };
-		78D31E8B2E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableCollectionDataSource.swift; sourceTree = "<group>"; };
-		78D31E8C2E9FA0F900D4929E /* SkeletonDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableDataSource.swift; sourceTree = "<group>"; };
 		78D31E8D2E9FA0F900D4929E /* SkeletonExtended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonExtended.swift; sourceTree = "<group>"; };
 		78D31E8E2E9FA0F900D4929E /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
 		78D31E902E9FA0F900D4929E /* CollectionSkeleton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionSkeleton.swift; sourceTree = "<group>"; };
@@ -289,6 +289,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		784849302EA0FF2A005656F4 /* Diffable */ = {
+			isa = PBXGroup;
+			children = (
+				7848492E2EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift */,
+				7848492F2EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift */,
+			);
+			path = Diffable;
+			sourceTree = "<group>";
+		};
 		78D31E702E9FA0F900D4929E /* AnimationBuilder */ = {
 			isa = PBXGroup;
 			children = (
@@ -371,13 +380,12 @@
 			children = (
 				78D31E702E9FA0F900D4929E /* AnimationBuilder */,
 				78D31E722E9FA0F900D4929E /* Appearance */,
+				784849302EA0FF2A005656F4 /* Diffable */,
 				78D31E772E9FA0F900D4929E /* Collections */,
 				78D31E792E9FA0F900D4929E /* FoundationExtensions */,
 				78D31E802E9FA0F900D4929E /* Models */,
 				78D31E892E9FA0F900D4929E /* UIKitExtensions */,
 				78D31E8A2E9FA0F900D4929E /* Deprecated.swift */,
-				78D31E8B2E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift */,
-				78D31E8C2E9FA0F900D4929E /* SkeletonDiffableDataSource.swift */,
 				78D31E8D2E9FA0F900D4929E /* SkeletonExtended.swift */,
 				78D31E8E2E9FA0F900D4929E /* SkeletonView.swift */,
 			);
@@ -803,7 +811,6 @@
 			buildActionMask = 0;
 			files = (
 				78D31F052E9FA0F900D4929E /* UIView+IBInspectable.swift in Sources */,
-				78D31F062E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift in Sources */,
 				78D31F072E9FA0F900D4929E /* DispatchQueue+Extensions.swift in Sources */,
 				78D31F082E9FA0F900D4929E /* SkeletonTextLineHeight.swift in Sources */,
 				78D31F092E9FA0F900D4929E /* SkeletonTableViewProtocols.swift in Sources */,
@@ -859,11 +866,12 @@
 				78D31F3B2E9FA0F900D4929E /* UICollectionView+CollectionSkeleton.swift in Sources */,
 				78D31F3C2E9FA0F900D4929E /* AssociationPolicy.swift in Sources */,
 				78D31F3D2E9FA0F900D4929E /* Recursive.swift in Sources */,
+				784849312EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift in Sources */,
+				784849322EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift in Sources */,
 				78D31F3E2E9FA0F900D4929E /* Deprecated.swift in Sources */,
 				78D31F3F2E9FA0F900D4929E /* UIView+AssociatedObjects.swift in Sources */,
 				78D31F402E9FA0F900D4929E /* SkeletonLayerBuilder.swift in Sources */,
 				78D31F412E9FA0F900D4929E /* SkeletonExtended.swift in Sources */,
-				78D31F422E9FA0F900D4929E /* SkeletonDiffableDataSource.swift in Sources */,
 				78D31F432E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -889,7 +897,6 @@
 			buildActionMask = 0;
 			files = (
 				78D31EC62E9FA0F900D4929E /* UIView+IBInspectable.swift in Sources */,
-				78D31EC72E9FA0F900D4929E /* SkeletonDiffableCollectionDataSource.swift in Sources */,
 				78D31EC82E9FA0F900D4929E /* DispatchQueue+Extensions.swift in Sources */,
 				78D31EC92E9FA0F900D4929E /* SkeletonTextLineHeight.swift in Sources */,
 				78D31ECA2E9FA0F900D4929E /* SkeletonTableViewProtocols.swift in Sources */,
@@ -945,11 +952,12 @@
 				78D31EFC2E9FA0F900D4929E /* UICollectionView+CollectionSkeleton.swift in Sources */,
 				78D31EFD2E9FA0F900D4929E /* AssociationPolicy.swift in Sources */,
 				78D31EFE2E9FA0F900D4929E /* Recursive.swift in Sources */,
+				784849332EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift in Sources */,
+				784849342EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift in Sources */,
 				78D31EFF2E9FA0F900D4929E /* Deprecated.swift in Sources */,
 				78D31F002E9FA0F900D4929E /* UIView+AssociatedObjects.swift in Sources */,
 				78D31F012E9FA0F900D4929E /* SkeletonLayerBuilder.swift in Sources */,
 				78D31F022E9FA0F900D4929E /* SkeletonExtended.swift in Sources */,
-				78D31F032E9FA0F900D4929E /* SkeletonDiffableDataSource.swift in Sources */,
 				78D31F042E9FA0F900D4929E /* SkeletonMultilinesLayerConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

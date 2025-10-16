@@ -22,27 +22,53 @@
 import UIKit
 
 @available(iOS 13.0, tvOS 13.0, *)
+public protocol SkeletonDiffableCollectionViewDataSourceDelegate: AnyObject {
+    func skeletonDiffableDataSourceNumberOfSections(_ dataSource: Any, in collectionView: UICollectionView) -> Int
+    func skeletonDiffableDataSource(_ dataSource: Any, numberOfPlaceholderItemsIn section: Int, in collectionView: UICollectionView) -> Int
+    func skeletonDiffableDataSource(_ dataSource: Any, cellIdentifierForPlaceholderAt indexPath: IndexPath, in collectionView: UICollectionView) -> ReusableCellIdentifier
+    func skeletonDiffableDataSource(_ dataSource: Any, supplementaryViewIdentifierOfKind kind: String, at indexPath: IndexPath, in collectionView: UICollectionView) -> ReusableCellIdentifier?
+    func skeletonDiffableDataSource(_ dataSource: Any, skeletonCellForItemAt indexPath: IndexPath, in collectionView: UICollectionView) -> UICollectionViewCell?
+    func skeletonDiffableDataSource(_ dataSource: Any, configurePlaceholderCell cell: UICollectionViewCell, at indexPath: IndexPath, in collectionView: UICollectionView)
+    func skeletonDiffableDataSource(_ dataSource: Any, prepareCellForSkeleton cell: UICollectionViewCell, at indexPath: IndexPath, in collectionView: UICollectionView)
+    func skeletonDiffableDataSource(_ dataSource: Any, prepareViewForSkeleton view: UICollectionReusableView, at indexPath: IndexPath, in collectionView: UICollectionView)
+}
+
+@available(iOS 13.0, tvOS 13.0, *)
+public extension SkeletonDiffableCollectionViewDataSourceDelegate {
+    func skeletonDiffableDataSourceNumberOfSections(_ dataSource: Any, in collectionView: UICollectionView) -> Int { 1 }
+    func skeletonDiffableDataSource(_ dataSource: Any, numberOfPlaceholderItemsIn section: Int, in collectionView: UICollectionView) -> Int { UICollectionView.automaticNumberOfSkeletonItems }
+    func skeletonDiffableDataSource(_ dataSource: Any, cellIdentifierForPlaceholderAt indexPath: IndexPath, in collectionView: UICollectionView) -> ReusableCellIdentifier { "Cell" }
+    func skeletonDiffableDataSource(_ dataSource: Any, supplementaryViewIdentifierOfKind kind: String, at indexPath: IndexPath, in collectionView: UICollectionView) -> ReusableCellIdentifier? { nil }
+    func skeletonDiffableDataSource(_ dataSource: Any, skeletonCellForItemAt indexPath: IndexPath, in collectionView: UICollectionView) -> UICollectionViewCell? { nil }
+    func skeletonDiffableDataSource(_ dataSource: Any, configurePlaceholderCell cell: UICollectionViewCell, at indexPath: IndexPath, in collectionView: UICollectionView) { }
+    func skeletonDiffableDataSource(_ dataSource: Any, prepareCellForSkeleton cell: UICollectionViewCell, at indexPath: IndexPath, in collectionView: UICollectionView) { }
+    func skeletonDiffableDataSource(_ dataSource: Any, prepareViewForSkeleton view: UICollectionReusableView, at indexPath: IndexPath, in collectionView: UICollectionView) { }
+}
+
+@available(iOS 13.0, tvOS 13.0, *)
 public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable, ItemID: Hashable>: UICollectionViewDiffableDataSource<SectionID, ItemID>, SkeletonCollectionViewDataSource {
     // Indicates whether the collection is currently in loading state (skeleton visible).
     public private(set) var isLoading: Bool = false
     // Number of inline placeholder items when using inline placeholders instead of relying solely on the skeleton dummy datasource.
     private var placeholderItemCount: Int
-    // Configuration closure for each placeholder cell (only used if useInlinePlaceholders == true).
-    public var configurePlaceholderCell: ((UICollectionView, IndexPath) -> UICollectionViewCell)?
     // Toggle to enable inline placeholder items while loading and diffable snapshot is empty.
     private let useInlinePlaceholders: Bool
     // Weak reference to avoid ambiguity with superclass API "collectionView" symbol.
     private weak var hostCollectionViewRef: UICollectionView?
+    // Delegado para personalizar comportamiento skeleton.
+    public weak var skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate?
 
     // MARK: - Init
     public init(collectionView hostCollectionView: UICollectionView,
                 placeholderItemCount: Int = 8,
                 useInlinePlaceholders: Bool = false,
                 cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
-                supplementaryViewProvider: SupplementaryViewProvider? = nil) {
+                supplementaryViewProvider: SupplementaryViewProvider? = nil,
+                skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate? = nil) {
         self.placeholderItemCount = placeholderItemCount
         self.useInlinePlaceholders = useInlinePlaceholders
         self.hostCollectionViewRef = hostCollectionView
+        self.skeletonDelegate = skeletonDelegate
         super.init(collectionView: hostCollectionView, cellProvider: cellProvider)
         if useInlinePlaceholders {
             hostCollectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "SkeletonPlaceholderCell")
@@ -125,18 +151,30 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     // MARK: - Inline placeholder support
     // Inline placeholders provide lightweight cells while loading WITHOUT swapping to SkeletonView's internal dummy data source.
     // This lets diffable preserve section structure (useful for compositional layouts) and still show shimmer.
-    // Enable via `useInlinePlaceholders: true` and optionally customize with `configurePlaceholderCell`.
+    // Enable via `useInlinePlaceholders: true` and optionally customize with `skeletonDelegate`.
     public override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if useInlinePlaceholders && isLoading && snapshot().numberOfItems == 0 { return placeholderItemCount }
+        if useInlinePlaceholders && isLoading && snapshot().numberOfItems == 0 {
+            // Pregunta primero al delegado por el número de items placeholder.
+            let delegatedCount = skeletonDelegate?.skeletonDiffableDataSource(self, numberOfPlaceholderItemsIn: section, in: collectionView)
+            return delegatedCount ?? placeholderItemCount
+        }
         return super.collectionView(collectionView, numberOfItemsInSection: section)
     }
 
     public override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if useInlinePlaceholders && isLoading && snapshot().numberOfItems == 0 {
-            if let configured = configurePlaceholderCell?(collectionView, indexPath) { return configured }
-            // Fallback generic registered cell (registered in init when inline placeholders enabled).
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "SkeletonPlaceholderCell", for: indexPath)
-            cell.isSkeletonable = true
+            let identifier = skeletonDelegate?.skeletonDiffableDataSource(self, cellIdentifierForPlaceholderAt: indexPath, in: collectionView) ?? "SkeletonPlaceholderCell"
+            var cell: UICollectionViewCell
+            if identifier == "SkeletonPlaceholderCell" {
+                cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath)
+            } else {
+                cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath)
+            }
+            if let delegate = skeletonDelegate {
+                delegate.skeletonDiffableDataSource(self, configurePlaceholderCell: cell, at: indexPath, in: collectionView)
+            } else {
+                cell.isSkeletonable = true
+            }
             return cell
         }
         return super.collectionView(collectionView, cellForItemAt: indexPath)
@@ -144,17 +182,31 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     
     // MARK: - SkeletonCollectionViewDataSource
     public func numSections(in collectionSkeletonView: UICollectionView) -> Int {
-        return 1
+        skeletonDelegate?.skeletonDiffableDataSourceNumberOfSections(self, in: collectionSkeletonView) ?? 1
     }
     
     public func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return placeholderItemCount
+        skeletonDelegate?.skeletonDiffableDataSource(self, numberOfPlaceholderItemsIn: section, in: skeletonView) ?? placeholderItemCount
     }
     
     public func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> ReusableCellIdentifier {
-        // Return the first registered cell identifier from the real cell provider
-        // For now, we'll use a default identifier that should be registered
-        return "Cell"
+        skeletonDelegate?.skeletonDiffableDataSource(self, cellIdentifierForPlaceholderAt: indexPath, in: skeletonView) ?? "Cell"
+    }
+    
+    public func collectionSkeletonView(_ skeletonView: UICollectionView, supplementaryViewIdentifierOfKind kind: String, at indexPath: IndexPath) -> ReusableCellIdentifier? {
+        skeletonDelegate?.skeletonDiffableDataSource(self, supplementaryViewIdentifierOfKind: kind, at: indexPath, in: skeletonView)
+    }
+    
+    public func collectionSkeletonView(_ skeletonView: UICollectionView, skeletonCellForItemAt indexPath: IndexPath) -> UICollectionViewCell? {
+        skeletonDelegate?.skeletonDiffableDataSource(self, skeletonCellForItemAt: indexPath, in: skeletonView)
+    }
+    
+    public func collectionSkeletonView(_ skeletonView: UICollectionView, prepareCellForSkeleton cell: UICollectionViewCell, at indexPath: IndexPath) {
+        skeletonDelegate?.skeletonDiffableDataSource(self, prepareCellForSkeleton: cell, at: indexPath, in: skeletonView)
+    }
+    
+    public func collectionSkeletonView(_ skeletonView: UICollectionView, prepareViewForSkeleton view: UICollectionReusableView, at indexPath: IndexPath) {
+        skeletonDelegate?.skeletonDiffableDataSource(self, prepareViewForSkeleton: view, at: indexPath, in: skeletonView)
     }
 }
 
@@ -165,12 +217,14 @@ public extension UICollectionView {
             placeholderItems: Int = 8,
             useInlinePlaceholders: Bool = false,
             cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
-            supplementaryViewProvider: UICollectionViewDiffableDataSource.SupplementaryViewProvider? = nil) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+            supplementaryViewProvider: UICollectionViewDiffableDataSource.SupplementaryViewProvider? = nil,
+            skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate? = nil) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
         let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
                                                                              placeholderItemCount: placeholderItems,
                                                                              useInlinePlaceholders: useInlinePlaceholders,
                                                                              cellProvider: cellProvider,
-                                                                             supplementaryViewProvider: supplementaryViewProvider)
+                                                                             supplementaryViewProvider: supplementaryViewProvider,
+                                                                             skeletonDelegate: skeletonDelegate)
         self.dataSource = ds
         return ds
     }
