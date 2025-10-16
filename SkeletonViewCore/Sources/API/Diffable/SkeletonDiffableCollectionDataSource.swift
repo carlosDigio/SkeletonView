@@ -245,7 +245,27 @@ public extension UICollectionView {
         }
         return skeletonDataSource.isLoading
     }
-
+    
+    /// Alias de conveniencia para mantener coherencia con UITableView y ejemplos/documentación.
+    /// Internamente delega en `skeletonDiffableDataSource`.
+    /// - Parameters:
+    ///   - placeholderItems: Número de items placeholder cuando `useInlinePlaceholders` es true.
+    ///   - useInlinePlaceholders: Activa placeholders inline (no intercambia al dataSource dummy interno).
+    ///   - cellProvider: Proveedor de celdas diffable.
+    ///   - supplementaryViewProvider: Proveedor opcional de supplementary views.
+    /// - Returns: SkeletonDiffableCollectionViewDataSource configurado y asignado como dataSource.
+    @discardableResult
+    func makeSkeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
+        placeholderItems: Int = 8,
+        useInlinePlaceholders: Bool = false,
+        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+        supplementaryViewProvider: UICollectionViewDiffableDataSource<SectionID, ItemID>.SupplementaryViewProvider? = nil
+    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+        return skeletonDiffableDataSource(placeholderItems: placeholderItems,
+                                          useInlinePlaceholders: useInlinePlaceholders,
+                                          cellProvider: cellProvider,
+                                          supplementaryViewProvider: supplementaryViewProvider)
+    }
 }
 
 #endif

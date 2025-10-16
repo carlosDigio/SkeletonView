@@ -493,18 +493,20 @@ final class MyTableVC: UIViewController {
     enum Section { case main }
     struct Row: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var tableView: UITableView!
-    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.isSkeletonable = true
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+        
+        // ✨ Setup dataSource once
+        let dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = item.title
             return cell
         }
+        
         // Configure placeholder cells shown while loading & snapshot empty
         dataSource.configurePlaceholderCell = { tv, indexPath in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
@@ -513,7 +515,9 @@ final class MyTableVC: UIViewController {
             cell.textLabel?.alpha = 0.55
             return cell
         }
-        dataSource.beginLoading()
+        
+        // ✨ NEW: Single line to start loading and show skeleton
+        tableView.beginSkeletonLoading()
         fetch()
     }
 
@@ -523,8 +527,18 @@ final class MyTableVC: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
             snapshot.appendSections([.main])
             snapshot.appendItems(rows)
-            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+            
+            // ✨ NEW: End loading and apply data directly
+            DispatchQueue.main.async {
+                self.tableView.endSkeletonLoadingAndApply(snapshot)
+            }
         }
+    }
+    
+    // ✨ NEW: For pull-to-refresh
+    @IBAction func refresh() {
+        tableView.resetAndShowSkeleton()
+        fetch()
     }
 }
 ```
@@ -536,25 +550,29 @@ final class MyCollectionVC: UIViewController {
     enum Section { case main }
     struct Item: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var collectionView: UICollectionView!
-    private var dataSource: SkeletonDiffableCollectionViewDataSource<Section, Item>!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.isSkeletonable = true
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
-        dataSource = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { collectionView, indexPath, item in
+        
+        // ✨ Setup dataSource once
+        let dataSource = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { collectionView, indexPath, item in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             // configure real UI
             return cell
         }
+        
         dataSource.configurePlaceholderCell = { cv, indexPath in
             let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.backgroundColor = .secondarySystemFill
             return cell
         }
-        dataSource.beginLoading()
+        
+        // ✨ NEW: Single line to start loading and show skeleton
+        collectionView.beginSkeletonLoading()
         fetch()
     }
 
@@ -564,12 +582,17 @@ final class MyCollectionVC: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
             snapshot.appendSections([.main])
             snapshot.appendItems(items)
-            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+            
+            // ✨ NEW: End loading and apply data directly
+            DispatchQueue.main.async {
+                self.collectionView.endSkeletonLoadingAndApply(snapshot)
+            }
         }
     }
 
+    // ✨ NEW: For pull-to-refresh
     @IBAction func refresh() {
-        dataSource.resetAndShowSkeleton(keepSections: true)
+        collectionView.resetAndShowSkeleton()
         fetch()
     }
 }
@@ -587,31 +610,33 @@ var configurePlaceholderCell: ((UITableView, IndexPath) -> UITableViewCell)?
 var configurePlaceholderCell: ((UICollectionView, IndexPath) -> UICollectionViewCell)?
 ```
 
-#### 🚀 Convenient Access Methods (NEW!)
-
-You can now control skeleton loading directly from UITableView/UICollectionView without keeping dataSource references:
-
+##### Factory helpers & parameters (NEW)
 ```swift
-// Setup (same as before)
-let dataSource = tableView.makeSkeletonDiffableDataSource { ... }
+// UITableView
+let ds = tableView.makeSkeletonDiffableDataSource(
+    placeholderRows: 10,              // How many inline placeholder rows when snapshot empty & loading
+    useInlinePlaceholders: true       // Enables inline placeholders instead of swapping to dummy data source
+) { tableView, indexPath, item in ... }
 
-// ✨ NEW: Direct access from tableView/collectionView
-tableView.beginSkeletonLoading()                    // Start loading & show skeleton
-tableView.endSkeletonLoading()                      // End loading only
-tableView.endSkeletonLoadingAndApply(snapshot)      // End loading & apply data
-tableView.resetAndShowSkeleton()                    // Reset for pull-to-refresh
-let isLoading = tableView.isSkeletonLoading          // Check loading state
-
-// Works identically for UICollectionView
-collectionView.beginSkeletonLoading()
-collectionView.endSkeletonLoadingAndApply(snapshot)
+// UICollectionView
+let cds = collectionView.makeSkeletonDiffableDataSource(
+    placeholderItems: 40,             // Inline placeholder items count
+    useInlinePlaceholders: true
+) { collectionView, indexPath, item in ... }
 ```
+Both collection & table also expose an alias `makeSkeletonDiffableDataSource` (collection internally calls `skeletonDiffableDataSource`). Use whichever reads better for your codebase.
 
-> **Benefits:**
-> * No need to store dataSource references
-> * Cleaner, more intuitive API
-> * Consistent between UITableView and UICollectionView
-> * Returns `Bool` to indicate success (true if using skeleton diffable dataSource)
+> If `useInlinePlaceholders` is false (default) the traditional Skeleton overlay is used (dummy data source). If true, diffable stays active and placeholder rows/items are generated until first non-empty snapshot.
+> `placeholderRows` / `placeholderItems` only matter when `useInlinePlaceholders` is true.
+
+##### View-level convenience (no dataSource reference needed)
+```swift
+tableView.beginSkeletonLoading()
+tableView.endSkeletonLoadingAndApply(snapshot)
+tableView.resetAndShowSkeleton()
+let loading = tableView.isSkeletonLoading
+collectionView.beginSkeletonLoading()
+```
 
 ## ✨ Miscellaneous 
 

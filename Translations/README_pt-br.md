@@ -238,18 +238,20 @@ final class MinhaTableVC: UIViewController {
     enum Section { case main }
     struct Row: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var tableView: UITableView!
-    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.isSkeletonable = true
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+        
+        // ✨ Configuração do dataSource uma vez
+        let dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = item.title
             return cell
         }
+        
         dataSource.configurePlaceholderCell = { tv, indexPath in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
@@ -257,7 +259,9 @@ final class MinhaTableVC: UIViewController {
             cell.textLabel?.alpha = 0.55
             return cell
         }
-        dataSource.beginLoading()
+        
+        // ✨ NOVO: Uma linha para iniciar carregamento e mostrar skeleton
+        tableView.beginSkeletonLoading()
         buscarDados()
     }
 
@@ -267,8 +271,18 @@ final class MinhaTableVC: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
             snapshot.appendSections([.main])
             snapshot.appendItems(rows)
-            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+            
+            // ✨ NOVO: Terminar carregamento e aplicar dados diretamente
+            DispatchQueue.main.async {
+                self.tableView.endSkeletonLoadingAndApply(snapshot)
+            }
         }
+    }
+    
+    // ✨ NOVO: Para pull-to-refresh
+    @IBAction func refresh() {
+        tableView.resetAndShowSkeleton()
+        buscarDados()
     }
 }
 ```

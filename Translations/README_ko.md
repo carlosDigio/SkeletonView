@@ -193,35 +193,51 @@ final class DiffableTableVC: UIViewController {
     enum Section { case main }
     struct Row: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var tableView: UITableView!
-    private var ds: SkeletonDiffableTableViewDataSource<Section, Row>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.isSkeletonable = true
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        ds = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
+        
+        // ✨ dataSource 한 번 설정
+        let dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = row.title
             return cell
         }
-        ds.configurePlaceholderCell = { tv, indexPath in
+        
+        dataSource.configurePlaceholderCell = { tv, indexPath in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = "로딩중…"
             cell.textLabel?.alpha = 0.55
             return cell
         }
-        ds.beginLoading()
+        
+        // ✨ 새로운 기능: 한 줄로 로딩 시작 및 skeleton 표시
+        tableView.beginSkeletonLoading()
         fetch()
     }
+
     private func fetch() {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
             let rows = (0..<10).map { Row(title: "Row \($0)") }
             var snap = NSDiffableDataSourceSnapshot<Section, Row>()
             snap.appendSections([.main])
             snap.appendItems(rows)
-            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+            
+            // ✨ 새로운 기능: 로딩 종료 및 데이터 직접 적용
+            DispatchQueue.main.async {
+                self.tableView.endSkeletonLoadingAndApply(snap)
+            }
         }
+    }
+    
+    // ✨ 새로운 기능: pull-to-refresh용
+    @IBAction func refresh() {
+        tableView.resetAndShowSkeleton()
+        fetch()
     }
 }
 ```
@@ -233,33 +249,49 @@ final class DiffableCollectionVC: UIViewController {
     enum Section { case main }
     struct Item: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var collectionView: UICollectionView!
-    private var ds: SkeletonDiffableCollectionViewDataSource<Section, Item>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.isSkeletonable = true
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
-        ds = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
+        
+        // ✨ dataSource 한 번 설정
+        let dataSource = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
             let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             return cell
         }
-        ds.configurePlaceholderCell = { cv, indexPath in
+        
+        dataSource.configurePlaceholderCell = { cv, indexPath in
             let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.backgroundColor = .secondarySystemFill
             return cell
         }
-        ds.beginLoading()
+        
+        // ✨ 새로운 기능: 한 줄로 로딩 시작 및 skeleton 표시
+        collectionView.beginSkeletonLoading()
         fetch()
     }
+
     private func fetch() {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
             let items = (0..<12).map { Item(title: "Item \($0)") }
             var snap = NSDiffableDataSourceSnapshot<Section, Item>()
             snap.appendSections([.main])
             snap.appendItems(items)
-            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+            
+            // ✨ 새로운 기능: 로딩 종료 및 데이터 직접 적용
+            DispatchQueue.main.async {
+                self.collectionView.endSkeletonLoadingAndApply(snap)
+            }
         }
+    }
+    
+    // ✨ 새로운 기능: pull-to-refresh용
+    @IBAction func refresh() {
+        collectionView.resetAndShowSkeleton()
+        fetch()
     }
 }
 ```

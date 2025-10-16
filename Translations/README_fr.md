@@ -222,35 +222,51 @@ final class MaTableVC: UIViewController {
     enum Section { case main }
     struct Row: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var tableView: UITableView!
-    private var ds: SkeletonDiffableTableViewDataSource<Section, Row>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.isSkeletonable = true
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        ds = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
+        
+        // ✨ Configuration du dataSource une fois
+        let dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tv, indexPath, row in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = row.title
             return cell
         }
-        ds.configurePlaceholderCell = { tv, indexPath in
-            let c = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-            c.isSkeletonable = true
-            c.textLabel?.text = "Chargement…"
-            c.textLabel?.alpha = 0.55
-            return c
+        
+        dataSource.configurePlaceholderCell = { tv, indexPath in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = "Chargement…"
+            cell.textLabel?.alpha = 0.55
+            return cell
         }
-        ds.beginLoading()
+        
+        // ✨ NOUVEAU : Une ligne pour démarrer le chargement et afficher skeleton
+        tableView.beginSkeletonLoading()
         charger()
     }
+
     private func charger() {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
             let data = (0..<10).map { Row(title: "Ligne \($0)") }
             var snap = NSDiffableDataSourceSnapshot<Section, Row>()
             snap.appendSections([.main])
             snap.appendItems(data)
-            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+            
+            // ✨ NOUVEAU : Terminer le chargement et appliquer les données directement
+            DispatchQueue.main.async {
+                self.tableView.endSkeletonLoadingAndApply(snap)
+            }
         }
+    }
+    
+    // ✨ NOUVEAU : Pour pull-to-refresh
+    @IBAction func refresh() {
+        tableView.resetAndShowSkeleton()
+        charger()
     }
 }
 ```
@@ -262,33 +278,49 @@ final class MaCollectionVC: UIViewController {
     enum Section { case main }
     struct Item: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var collectionView: UICollectionView!
-    private var ds: SkeletonDiffableCollectionViewDataSource<Section, Item>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.isSkeletonable = true
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
-        ds = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
+        
+        // ✨ Configuration du dataSource une fois
+        let dataSource = collectionView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { cv, indexPath, item in
             let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             return cell
         }
-        ds.configurePlaceholderCell = { cv, indexPath in
-            let c = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
-            c.isSkeletonable = true
-            c.backgroundColor = .secondarySystemFill
-            return c
+        
+        dataSource.configurePlaceholderCell = { cv, indexPath in
+            let cell = cv.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.backgroundColor = .secondarySystemFill
+            return cell
         }
-        ds.beginLoading()
+        
+        // ✨ NOUVEAU : Une ligne pour démarrer le chargement et afficher skeleton
+        collectionView.beginSkeletonLoading()
         charger()
     }
+    
     private func charger() {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
             let items = (0..<12).map { Item(title: "Item \($0)") }
             var snap = NSDiffableDataSourceSnapshot<Section, Item>()
             snap.appendSections([.main])
             snap.appendItems(items)
-            DispatchQueue.main.async { self.ds.endLoadingAndApply(snap) }
+            
+            // ✨ NOUVEAU : Terminer le chargement et appliquer les données directement
+            DispatchQueue.main.async {
+                self.collectionView.endSkeletonLoadingAndApply(snap)
+            }
         }
+    }
+    
+    // ✨ NOUVEAU : Pour pull-to-refresh
+    @IBAction func refresh() {
+        collectionView.resetAndShowSkeleton()
+        charger()
     }
 }
 ```

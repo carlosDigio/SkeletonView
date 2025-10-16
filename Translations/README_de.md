@@ -279,18 +279,20 @@ final class MeineTableVC: UIViewController {
     enum Section { case main }
     struct Row: Hashable { let id = UUID(); let title: String }
     @IBOutlet private weak var tableView: UITableView!
-    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.isSkeletonable = true
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+        
+        // ✨ DataSource einmal konfigurieren
+        let dataSource = tableView.skeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
             cell.textLabel?.text = item.title
             return cell
         }
+        
         dataSource.configurePlaceholderCell = { tv, indexPath in
             let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             cell.isSkeletonable = true
@@ -298,7 +300,9 @@ final class MeineTableVC: UIViewController {
             cell.textLabel?.alpha = 0.55
             return cell
         }
-        dataSource.beginLoading()
+        
+        // ✨ NEU: Eine Zeile um Laden zu starten und Skeleton anzuzeigen
+        tableView.beginSkeletonLoading()
         datenLaden()
     }
 
@@ -308,8 +312,18 @@ final class MeineTableVC: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
             snapshot.appendSections([.main])
             snapshot.appendItems(rows)
-            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+            
+            // ✨ NEU: Laden beenden und Daten direkt anwenden
+            DispatchQueue.main.async {
+                self.tableView.endSkeletonLoadingAndApply(snapshot)
+            }
         }
+    }
+    
+    // ✨ NEU: Für Pull-to-Refresh
+    @IBAction func refresh() {
+        tableView.resetAndShowSkeleton()
+        datenLaden()
     }
 }
 ```
@@ -361,7 +375,7 @@ Sie können jetzt das Skeleton-Laden direkt von UITableView/UICollectionView aus
 
 ```swift
 // Konfiguration (gleich wie vorher)
-let dataSource = tableView.makeSkeletonDiffableDataSource { ... }
+let dataSource = tableView.skeletonDiffableDataSource { ... }
 
 // ✨ NEU: Direkter Zugriff von tableView/collectionView
 tableView.beginSkeletonLoading()                    // Laden starten und Skeleton anzeigen
