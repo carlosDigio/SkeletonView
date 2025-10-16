@@ -161,11 +161,11 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
 @available(iOS 13.0, tvOS 13.0, *)
 public extension UICollectionView {
     /// Convenience factory returning a diffable data source integrated with SkeletonView.
-    func skeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
-        placeholderItems: Int = 8,
-        useInlinePlaceholders: Bool = false,
-        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
-        supplementaryViewProvider: UICollectionViewDiffableDataSource.SupplementaryViewProvider? = nil) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+    func makeSkeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
+            placeholderItems: Int = 8,
+            useInlinePlaceholders: Bool = false,
+            cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+            supplementaryViewProvider: UICollectionViewDiffableDataSource.SupplementaryViewProvider? = nil) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
         let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
                                                                              placeholderItemCount: placeholderItems,
                                                                              useInlinePlaceholders: useInlinePlaceholders,
@@ -244,27 +244,6 @@ public extension UICollectionView {
             return false
         }
         return skeletonDataSource.isLoading
-    }
-    
-    /// Alias de conveniencia para mantener coherencia con UITableView y ejemplos/documentación.
-    /// Internamente delega en `skeletonDiffableDataSource`.
-    /// - Parameters:
-    ///   - placeholderItems: Número de items placeholder cuando `useInlinePlaceholders` es true.
-    ///   - useInlinePlaceholders: Activa placeholders inline (no intercambia al dataSource dummy interno).
-    ///   - cellProvider: Proveedor de celdas diffable.
-    ///   - supplementaryViewProvider: Proveedor opcional de supplementary views.
-    /// - Returns: SkeletonDiffableCollectionViewDataSource configurado y asignado como dataSource.
-    @discardableResult
-    func makeSkeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
-        placeholderItems: Int = 8,
-        useInlinePlaceholders: Bool = false,
-        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
-        supplementaryViewProvider: UICollectionViewDiffableDataSource<SectionID, ItemID>.SupplementaryViewProvider? = nil
-    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
-        return skeletonDiffableDataSource(placeholderItems: placeholderItems,
-                                          useInlinePlaceholders: useInlinePlaceholders,
-                                          cellProvider: cellProvider,
-                                          supplementaryViewProvider: supplementaryViewProvider)
     }
 }
 
