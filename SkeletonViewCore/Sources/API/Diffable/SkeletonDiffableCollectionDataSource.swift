@@ -46,17 +46,23 @@ public extension SkeletonDiffableCollectionViewDataSourceDelegate {
 }
 
 @available(iOS 13.0, tvOS 13.0, *)
-public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable, ItemID: Hashable>: UICollectionViewDiffableDataSource<SectionID, ItemID>, SkeletonCollectionViewDataSource {
-    // Indicates whether the collection is currently in loading state (skeleton visible).
+public protocol AnySkeletonDiffableCollectionDataSource: SkeletonCollectionViewDataSource {}
+
+@available(iOS 13.0, tvOS 13.0, *)
+public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable, ItemID: Hashable>: UICollectionViewDiffableDataSource<SectionID, ItemID>, SkeletonCollectionViewDataSource, AnySkeletonDiffableCollectionDataSource {
+    /// Indica si el collection está en estado de carga (skeleton visible o placeholders inline).
     public private(set) var isLoading: Bool = false
-    // Number of inline placeholder items when using inline placeholders instead of relying solely on the skeleton dummy datasource.
+    /// Número de items placeholder inline cuando se utilizan placeholders inline en lugar de depender únicamente del datasource dummy de skeleton.
     private var placeholderItemCount: Int
-    // Toggle to enable inline placeholder items while loading and diffable snapshot is empty.
+    /// Toggle para habilitar items placeholder inline mientras se carga y el snapshot diffable está vacío.
     private let useInlinePlaceholders: Bool
-    // Weak reference to avoid ambiguity with superclass API "collectionView" symbol.
+    /// Weak reference to avoid ambiguity with superclass API "collectionView" symbol.
     private weak var hostCollectionViewRef: UICollectionView?
-    // Delegado para personalizar comportamiento skeleton.
+    /// Delegado para personalizar comportamiento skeleton.
     public weak var skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate?
+
+    /// Modo inline placeholders activo? Expuesto para lógica que evita instalar dummy data source.
+    public var usesInlinePlaceholders: Bool { useInlinePlaceholders }
 
     // MARK: - Init
     public init(collectionView hostCollectionView: UICollectionView,
@@ -137,6 +143,10 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
                               completion: (() -> Void)? = nil) {
         let work = { [weak self] in
             guard let self = self else { return }
+            // Asegurarnos de que el collectionView tenga este diffable como dataSource antes de aplicar
+            if let cv = self.hostCollectionViewRef, cv.dataSource !== self {
+                cv.dataSource = self
+            }
             self.apply(snapshot, animatingDifferences: animatingDifferences) { [weak self] in
                 guard let self = self else { return }
                 let isEmpty = snapshot.numberOfItems == 0

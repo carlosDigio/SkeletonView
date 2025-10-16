@@ -29,7 +29,10 @@
 import UIKit
 
 @available(iOS 13.0, tvOS 13.0, *)
-public final class SkeletonDiffableTableViewDataSource<SectionID: Hashable, ItemID: Hashable>: UITableViewDiffableDataSource<SectionID, ItemID>, SkeletonTableViewDataSource {
+public protocol AnySkeletonDiffableTableDataSource: SkeletonTableViewDataSource {}
+
+@available(iOS 13.0, tvOS 13.0, *)
+public final class SkeletonDiffableTableViewDataSource<SectionID: Hashable, ItemID: Hashable>: UITableViewDiffableDataSource<SectionID, ItemID>, SkeletonTableViewDataSource, AnySkeletonDiffableTableDataSource {
     // Indicates whether we are currently in loading (skeleton) state.
     public private(set) var isLoading: Bool = false
     // Placeholder row count (only used when developer wants inline placeholders without swapping to Skeleton's dummy data source).
@@ -125,6 +128,10 @@ public final class SkeletonDiffableTableViewDataSource<SectionID: Hashable, Item
                               completion: (() -> Void)? = nil) {
         let work = { [weak self] in
             guard let self = self else { return }
+            // Reasignar el dataSource original diffable si fue reemplazado por el dummy skeleton
+            if let tv = self.hostTableViewRef, tv.dataSource !== self {
+                tv.dataSource = self
+            }
             self.apply(snapshot, animatingDifferences: animatingDifferences) { [weak self] in
                 guard let self = self else { return }
                 let isEmpty = snapshot.numberOfItems == 0
