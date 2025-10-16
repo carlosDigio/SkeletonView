@@ -66,7 +66,7 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
 
     // MARK: - Init
     public init(collectionView hostCollectionView: UICollectionView,
-                placeholderItemCount: Int = 8,
+                placeholderItemCount: Int = 30,
                 useInlinePlaceholders: Bool = false,
                 cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
                 supplementaryViewProvider: SupplementaryViewProvider? = nil,

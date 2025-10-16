@@ -102,9 +102,10 @@ Une fois que vous avez configuré votre paquet Swift, ajouter `SkeletonView` com
 
 ```swift
   dependencies: [
-    .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.7.0")
+    .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.31.0")
   ]
 ```
+> 📣 **IMPORTANT** Depuis la v1.30.0 `SkeletonView` supporte les **XCFrameworks**. Pour l'installation XCFramework utilisez : [SkeletonView-XCFramework](https://github.com/Juanpe/SkeletonView-XCFramework.git).
 
 ## 🐒 Mode d'emploi
 
@@ -611,7 +612,7 @@ Bientôt disponible...😅
 
 * iOS 9.0+
 * tvOS 9.0+
-* Swift 5
+* Swift 5.3
 
 ## 📬 Prochaines étapes
 

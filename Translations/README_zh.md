@@ -37,6 +37,7 @@
 - [📲 安装](#-安装)
     - [使用 CocoaPods](#使用-cocoapods)
     - [使用 Carthage](#使用-carthage)
+    - [使用 Swift Package Manager](#使用-swift-package-manager)
 - [🐒 如何使用](#-如何使用)
   - [🌿 集合](#-集合)
         - [UITableView](#uitableview)
@@ -70,7 +71,7 @@
 
 * iOS 10.0+
 * tvOS 10.0+
-* Swift 4.2
+* Swift 5.3
 
 ### 🔮 示例
 
@@ -93,6 +94,14 @@ pod "SkeletonView"
 ```bash
 github "Juanpe/SkeletonView"
 ```
+
+#### 使用 Swift Package Manager
+```swift
+dependencies: [
+  .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.31.0")
+]
+```
+> 📣 **重要** 自 1.30.0 起 `SkeletonView` 支持 **XCFrameworks**。如需以 XCFramework 安装请使用仓库: [SkeletonView-XCFramework](https://github.com/Juanpe/SkeletonView-XCFramework.git)
 
 ## 🐒 如何使用
 

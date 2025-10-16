@@ -88,7 +88,7 @@ github "Juanpe/SkeletonView"
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.7.0")
+  .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.31.0")
 ]
 ```
 

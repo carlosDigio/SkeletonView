@@ -96,9 +96,10 @@ github "Juanpe/SkeletonView"
 
 ```swift
   dependencies: [
-    .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.6")
+    .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.31.0")
   ]
 ```
+> 📣 **중요** v1.30.0 부터 `SkeletonView` 는 **XCFramework** 를 지원합니다. XCFramework 형태로 설치하려면: [SkeletonView-XCFramework](https://github.com/Juanpe/SkeletonView-XCFramework.git)
 
 
 

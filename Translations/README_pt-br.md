@@ -37,6 +37,7 @@ Aproveite! 🙂
 - [📲 Instalação](#-instalação)
     - [Usando CocoaPods](#usando-cocoapods)
     - [Usando Carthage](#usando-carthage)
+    - [Usando Swift Package Manager](#usando-swift-package-manager)
 - [🐒 Como usar](#-como-usar)
   - [🌿 Coleções](#-coleções)
         - [UITableView](#uitableview)
@@ -71,7 +72,7 @@ Aproveite! 🙂
 
 * iOS 9.0+
 * tvOS 9.0+
-* Swift 4.2
+* Swift 5.3
 
 ### 🔮 Exemplo
 
@@ -94,6 +95,14 @@ Edite seu `Cartfile` e especifíque a dependência:
 ```bash
 github "Juanpe/SkeletonView"
 ```
+
+#### Usando Swift Package Manager
+```swift
+dependencies: [
+  .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.31.0")
+]
+```
+> 📣 **IMPORTANTE** A partir da versão 1.30.0 `SkeletonView` suporta **XCFrameworks**. Para instalar como XCFramework use: [SkeletonView-XCFramework](https://github.com/Juanpe/SkeletonView-XCFramework.git)
 
 ## 🐒 Como usar
 

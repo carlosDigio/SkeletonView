@@ -46,7 +46,7 @@ public final class SkeletonDiffableTableViewDataSource<SectionID: Hashable, Item
 
     // MARK: - Init
     public init(tableView hostTableView: UITableView,
-                placeholderRowCount: Int = 5,
+                placeholderRowCount: Int = 30,
                 useInlinePlaceholders: Bool = false,
                 cellProvider: @escaping UITableViewDiffableDataSource<SectionID, ItemID>.CellProvider) {
         self.placeholderRowCount = placeholderRowCount
@@ -249,8 +249,8 @@ public extension UITableView {
     /// - Returns: true if operation was successful, false if dataSource is not a skeleton diffable dataSource
     @discardableResult
     func resetAndShowSkeleton(keepSections: Bool = true,
-                             showSkeleton: Bool = true,
-                             animatingDifferences: Bool = false) -> Bool {
+                              showSkeleton: Bool = true,
+                              animatingDifferences: Bool = false) -> Bool {
         guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<AnyHashable, AnyHashable> else {
             return false
         }

@@ -159,6 +159,7 @@
 /* Begin PBXFileReference section */
 		7848492E2EA0FF2A005656F4 /* SkeletonDiffableCollectionDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableCollectionDataSource.swift; sourceTree = "<group>"; };
 		7848492F2EA0FF2A005656F4 /* SkeletonDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonDiffableDataSource.swift; sourceTree = "<group>"; };
+		784849392EA1134C005656F4 /* README_de.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README_de.md; path = Translations/README_de.md; sourceTree = "<group>"; };
 		78D31E6F2E9FA0F900D4929E /* SkeletonAnimationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonAnimationBuilder.swift; sourceTree = "<group>"; };
 		78D31E712E9FA0F900D4929E /* SkeletonAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonAppearance.swift; sourceTree = "<group>"; };
 		78D31E732E9FA0F900D4929E /* SkeletonCollectionViewProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonCollectionViewProtocols.swift; sourceTree = "<group>"; };
@@ -555,6 +556,7 @@
 				F556F51A26CD1C1200A80B83 /* CHANGELOG.md */,
 				F556F51B26CD1C1200A80B83 /* CODE_OF_CONDUCT.md */,
 				F556F51C26CD1C1200A80B83 /* CONTRIBUTING.md */,
+				784849392EA1134C005656F4 /* README_de.md */,
 				F556F51826CD1BFF00A80B83 /* README_es.md */,
 				F556F51726CD1BFF00A80B83 /* README_fr.md */,
 				F556F51626CD1BFF00A80B83 /* README_ko.md */,
