@@ -171,7 +171,7 @@ public extension UITableView {
     func makeSkeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
         placeholderRows: Int = 5,
         useInlinePlaceholders: Bool = false,
-        cellProvider: @escaping UITableViewDiffableDataSource<SectionID, ItemID>.CellProvider
+        cellProvider: @escaping UITableViewDiffableDataSource<SectionID, ItemID>.CellProvider,
     ) -> SkeletonDiffableTableViewDataSource<SectionID, ItemID> {
         let ds = SkeletonDiffableTableViewDataSource<SectionID, ItemID>(tableView: self,
                                                                         placeholderRowCount: placeholderRows,

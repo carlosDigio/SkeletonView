@@ -38,7 +38,8 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     public init(collectionView hostCollectionView: UICollectionView,
                 placeholderItemCount: Int = 8,
                 useInlinePlaceholders: Bool = false,
-                cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider) {
+                cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+                supplementaryViewProvider: SupplementaryViewProvider? = nil) {
         self.placeholderItemCount = placeholderItemCount
         self.useInlinePlaceholders = useInlinePlaceholders
         self.hostCollectionViewRef = hostCollectionView
@@ -46,6 +47,7 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
         if useInlinePlaceholders {
             hostCollectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "SkeletonPlaceholderCell")
         }
+        self.supplementaryViewProvider = supplementaryViewProvider
     }
 
     // MARK: - Loading lifecycle
@@ -148,15 +150,16 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
 @available(iOS 13.0, tvOS 13.0, *)
 public extension UICollectionView {
     /// Convenience factory returning a diffable data source integrated with SkeletonView.
-    func makeSkeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
+    func skeletonDiffableDataSource<SectionID: Hashable, ItemID: Hashable>(
         placeholderItems: Int = 8,
         useInlinePlaceholders: Bool = false,
-        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider
-    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+        supplementaryViewProvider: UICollectionViewDiffableDataSource.SupplementaryViewProvider? = nil) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
         let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
                                                                              placeholderItemCount: placeholderItems,
                                                                              useInlinePlaceholders: useInlinePlaceholders,
-                                                                             cellProvider: cellProvider)
+                                                                             cellProvider: cellProvider,
+                                                                             supplementaryViewProvider: supplementaryViewProvider)
         self.dataSource = ds
         return ds
     }
