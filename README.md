@@ -587,12 +587,31 @@ var configurePlaceholderCell: ((UITableView, IndexPath) -> UITableViewCell)?
 var configurePlaceholderCell: ((UICollectionView, IndexPath) -> UICollectionViewCell)?
 ```
 
-> Notes:
-> * Inline placeholders are OFF by default. Pass `useInlinePlaceholders: true` on creation.
-> * They keep section layout & headers visible while skeleton shimmer animates.
-> * `resetAndShowSkeleton` restarts a loading cycle (clears items, optionally preserves sections, shows skeleton, applies empty snapshot).
-> * iOS/tvOS 13+ only.
+#### 🚀 Convenient Access Methods (NEW!)
 
+You can now control skeleton loading directly from UITableView/UICollectionView without keeping dataSource references:
+
+```swift
+// Setup (same as before)
+let dataSource = tableView.makeSkeletonDiffableDataSource { ... }
+
+// ✨ NEW: Direct access from tableView/collectionView
+tableView.beginSkeletonLoading()                    // Start loading & show skeleton
+tableView.endSkeletonLoading()                      // End loading only
+tableView.endSkeletonLoadingAndApply(snapshot)      // End loading & apply data
+tableView.resetAndShowSkeleton()                    // Reset for pull-to-refresh
+let isLoading = tableView.isSkeletonLoading          // Check loading state
+
+// Works identically for UICollectionView
+collectionView.beginSkeletonLoading()
+collectionView.endSkeletonLoadingAndApply(snapshot)
+```
+
+> **Benefits:**
+> * No need to store dataSource references
+> * Cleaner, more intuitive API
+> * Consistent between UITableView and UICollectionView
+> * Returns `Bool` to indicate success (true if using skeleton diffable dataSource)
 
 ## ✨ Miscellaneous 
 

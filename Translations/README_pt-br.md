@@ -218,6 +218,98 @@ public protocol SkeletonCollectionViewDataSource: UICollectionViewDataSource {
 
 O resto do processo é o mesmo da ```UITableView```
 
+## 🧩 Diffable Data Source
+
+SkeletonView suporta `UITableViewDiffableDataSource` e `UICollectionViewDiffableDataSource` (iOS/tvOS 13+) através dos helpers:
+
+* `SkeletonDiffableTableViewDataSource`
+* `SkeletonDiffableCollectionViewDataSource`
+
+Eles coordenam o ciclo de vida do skeleton com snapshots diffable para que você possa:
+* Mostrar um skeleton durante o carregamento.
+* Manter o skeleton visível para snapshots vazios durante o carregamento.
+* Ocultar automaticamente quando o primeiro snapshot não vazio é aplicado (ou manualmente chamando `endLoading`).
+* Opcionalmente exibir placeholders inline (`useInlinePlaceholders`) sem trocar para o data source interno dummy.
+
+#### Exemplo UITableView (com placeholders inline)
+```swift
+@available(iOS 13.0, *)
+final class MinhaTableVC: UIViewController {
+    enum Section { case main }
+    struct Row: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var tableView: UITableView!
+    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.isSkeletonable = true
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = item.title
+            return cell
+        }
+        dataSource.configurePlaceholderCell = { tv, indexPath in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = "Carregando…"
+            cell.textLabel?.alpha = 0.55
+            return cell
+        }
+        dataSource.beginLoading()
+        buscarDados()
+    }
+
+    private func buscarDados() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let rows = (0..<10).map { Row(title: "Linha \($0)") }
+            var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+            snapshot.appendSections([.main])
+            snapshot.appendItems(rows)
+            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+        }
+    }
+}
+```
+
+#### 🎨 Personalizando cores do skeleton com Diffable Data Source
+
+Ao usar `SkeletonDiffableTableViewDataSource` ou `SkeletonDiffableCollectionViewDataSource`, você pode personalizar a aparência do skeleton de várias formas:
+
+**1. Usando aparência global:**
+```swift
+// Definir cor padrão para todos os skeletons
+SkeletonAppearance.default.tintColor = .systemBlue
+
+// Definir gradiente personalizado
+SkeletonAppearance.default.gradient = SkeletonGradient(baseColor: .systemGreen)
+```
+
+**2. Personalização por view ao mostrar o skeleton:**
+```swift
+// Após chamar dataSource.beginLoading()
+tableView.showAnimatedSkeleton(usingColor: .systemRed)
+// ou
+collectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(colors: [.blue, .cyan]))
+```
+
+**3. Para placeholders inline:**
+```swift
+dataSource.configurePlaceholderCell = { tableView, indexPath in
+    let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    cell.isSkeletonable = true
+    cell.backgroundColor = .systemGray5  // Fundo personalizado
+    return cell
+}
+```
+
+> Notas:
+> * Placeholders inline estão desabilitados por padrão. Passe `useInlinePlaceholders: true` na criação.
+> * Eles mantêm o layout de seções e headers visíveis enquanto anima o shimmer do skeleton.
+> * A personalização de cores funciona tanto com placeholders inline quanto com o modo de overlay tradicional do skeleton.
+> * Apenas iOS/tvOS 13+.
+
 ### 📰 Texto de várias linhas
 
 

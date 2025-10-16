@@ -259,6 +259,135 @@ public protocol SkeletonCollectionViewDataSource: UICollectionViewDataSource {
 
 Der Rest des Prozesses ist derselbe wie bei ```UITableView```
 
+## 🧩 Diffable Data Source
+
+SkeletonView unterstützt `UITableViewDiffableDataSource` und `UICollectionViewDiffableDataSource` (iOS/tvOS 13+) über die Helfer:
+
+* `SkeletonDiffableTableViewDataSource`
+* `SkeletonDiffableCollectionViewDataSource`
+
+Sie koordinieren den Skeleton-Lebenszyklus mit diffable Snapshots, sodass Sie:
+* Ein Skeleton während des Ladens anzeigen können.
+* Das Skeleton für leere Snapshots während des Ladens sichtbar halten.
+* Automatisch ausblenden, wenn der erste nicht-leere Snapshot angewendet wird (oder manuell durch Aufrufen von `endLoading`).
+* Optional Inline-Platzhalter (`useInlinePlaceholders`) anzeigen, ohne zur internen Dummy-Datenquelle zu wechseln.
+
+#### UITableView Beispiel (mit Inline-Platzhaltern)
+```swift
+@available(iOS 13.0, *)
+final class MeineTableVC: UIViewController {
+    enum Section { case main }
+    struct Row: Hashable { let id = UUID(); let title: String }
+    @IBOutlet private weak var tableView: UITableView!
+    private var dataSource: SkeletonDiffableTableViewDataSource<Section, Row>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.isSkeletonable = true
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        dataSource = tableView.makeSkeletonDiffableDataSource(useInlinePlaceholders: true) { tableView, indexPath, item in
+            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = item.title
+            return cell
+        }
+        dataSource.configurePlaceholderCell = { tv, indexPath in
+            let cell = tv.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+            cell.isSkeletonable = true
+            cell.textLabel?.text = "Lädt…"
+            cell.textLabel?.alpha = 0.55
+            return cell
+        }
+        dataSource.beginLoading()
+        datenLaden()
+    }
+
+    private func datenLaden() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+            let rows = (0..<10).map { Row(title: "Zeile \($0)") }
+            var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+            snapshot.appendSections([.main])
+            snapshot.appendItems(rows)
+            DispatchQueue.main.async { self.dataSource.endLoadingAndApply(snapshot) }
+        }
+    }
+}
+```
+
+#### API-Zusammenfassung
+```swift
+beginLoading(showSkeleton: Bool = true)
+endLoading()
+endLoadingAndApply(_:animatingDifferences:completion:)
+applySnapshot(_:animatingDifferences:completion:)
+resetAndShowSkeleton(keepSections:showSkeleton:animatingDifferences:)
+configurePlaceholderCell // Konfiguriert Zelle für Inline-Platzhalter
+```
+
+#### 🎨 Anpassung der Skeleton-Farben mit Diffable Data Source
+
+Bei der Verwendung von `SkeletonDiffableTableViewDataSource` oder `SkeletonDiffableCollectionViewDataSource` können Sie das Erscheinungsbild des Skeletons auf verschiedene Weise anpassen:
+
+**1. Verwendung des globalen Erscheinungsbilds:**
+```swift
+// Standardfarbe für alle Skeletons festlegen
+SkeletonAppearance.default.tintColor = .systemBlue
+
+// Benutzerdefinierten Farbverlauf festlegen
+SkeletonAppearance.default.gradient = SkeletonGradient(baseColor: .systemGreen)
+```
+
+**2. Pro-View-Anpassung beim Anzeigen des Skeletons:**
+```swift
+// Nach dem Aufruf von dataSource.beginLoading()
+tableView.showAnimatedSkeleton(usingColor: .systemRed)
+// oder
+collectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(colors: [.blue, .cyan]))
+```
+
+**3. Für Inline-Platzhalter:**
+```swift
+dataSource.configurePlaceholderCell = { tableView, indexPath in
+    let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    cell.isSkeletonable = true
+    cell.backgroundColor = .systemGray5  // Benutzerdefinierter Hintergrund
+    return cell
+}
+```
+
+#### 🚀 Praktische Zugriffsmethoden (NEU!)
+
+Sie können jetzt das Skeleton-Laden direkt von UITableView/UICollectionView aus steuern, ohne dataSource-Referenzen zu behalten:
+
+```swift
+// Konfiguration (gleich wie vorher)
+let dataSource = tableView.makeSkeletonDiffableDataSource { ... }
+
+// ✨ NEU: Direkter Zugriff von tableView/collectionView
+tableView.beginSkeletonLoading()                    // Laden starten und Skeleton anzeigen
+tableView.endSkeletonLoading()                      // Laden nur beenden
+tableView.endSkeletonLoadingAndApply(snapshot)      // Laden beenden und Daten anwenden
+tableView.resetAndShowSkeleton()                    // Für Pull-to-Refresh neu starten
+let isLoading = tableView.isSkeletonLoading          // Ladezustand prüfen
+
+// Funktioniert identisch für UICollectionView
+collectionView.beginSkeletonLoading()
+collectionView.endSkeletonLoadingAndApply(snapshot)
+```
+
+> **Vorteile:**
+> * Keine Notwendigkeit, dataSource-Referenzen zu speichern
+> * Saubere, intuitive API
+> * Konsistent zwischen UITableView und UICollectionView
+> * Gibt `Bool` zurück um Erfolg anzuzeigen (true wenn skeleton diffable dataSource verwendet wird)
+
+> Hinweise:
+> * Inline-Platzhalter sind standardmäßig deaktiviert. Übergeben Sie `useInlinePlaceholders: true` bei der Erstellung.
+> * Sie behalten das Layout von Abschnitten und Headern sichtbar, während der Skeleton-Shimmer animiert.
+> * `resetAndShowSkeleton` startet einen Ladezyklus neu (löscht Elemente, behält optional Abschnitte bei, zeigt Skeleton, wendet leeren Snapshot an).
+> * Die Farbanpassung funktioniert sowohl mit Inline-Platzhaltern als auch mit dem traditionellen Skeleton-Overlay-Modus.
+> * Nur iOS/tvOS 13+.
+
 ### 🔠 Texte
 
 ![](../Assets/multilines2.png)

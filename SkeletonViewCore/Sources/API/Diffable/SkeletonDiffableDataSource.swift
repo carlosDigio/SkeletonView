@@ -58,14 +58,23 @@ public final class SkeletonDiffableTableViewDataSource<SectionID: Hashable, Item
 
     // MARK: - Loading lifecycle
 
-    /// Starts loading mode. Note: Does NOT show skeleton automatically to avoid datasource swap.
-    /// Call showAnimatedSkeleton() manually AFTER this if needed, but be aware it may cause issues.
-    /// - Parameter showSkeleton: Ignored for diffable datasources to prevent datasource swap.
+    /// Starts loading mode and optionally shows skeleton.
+    /// - Parameter showSkeleton: When true, shows skeleton automatically. Safe for diffable datasources.
     public func beginLoading(showSkeleton: Bool = true) {
         guard !isLoading else { return }
         isLoading = true
-        // DO NOT call showAnimatedSkeleton() here - it would swap the datasource
-        // The skeleton must be shown manually by the caller if needed
+        
+        // Show skeleton if requested - safe for diffable datasources since we maintain the same dataSource
+        if showSkeleton {
+            if useInlinePlaceholders {
+                // For inline placeholders, we just need to reload to show placeholder cells
+                let empty = NSDiffableDataSourceSnapshot<SectionID, ItemID>()
+                apply(empty, animatingDifferences: false)
+            } else {
+                // For traditional skeleton overlay, show it directly
+                hostTableViewRef?.showAnimatedSkeleton()
+            }
+        }
     }
 
     /// Marks the end of loading. You should call `endLoadingAndApply(_:)` to both end loading and apply the snapshot.
@@ -179,6 +188,77 @@ public extension UITableView {
                                                                         cellProvider: cellProvider)
         self.dataSource = ds
         return ds
+    }
+    
+    // MARK: - Convenient Skeleton Diffable Methods
+    
+    /// Starts loading and shows skeleton if the current dataSource is a SkeletonDiffableTableViewDataSource
+    /// - Parameter showSkeleton: Whether to show the skeleton automatically (default: true)
+    /// - Returns: true if operation was successful, false if dataSource is not a skeleton diffable dataSource
+    @discardableResult
+    func beginSkeletonLoading(showSkeleton: Bool = true) -> Bool {
+        guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<AnyHashable, AnyHashable> else {
+            return false
+        }
+        skeletonDataSource.beginLoading(showSkeleton: showSkeleton)
+        return true
+    }
+    
+    /// Ends loading if the current dataSource is a SkeletonDiffableTableViewDataSource
+    /// - Returns: true if operation was successful, false if dataSource is not a skeleton diffable dataSource
+    @discardableResult
+    func endSkeletonLoading() -> Bool {
+        guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<AnyHashable, AnyHashable> else {
+            return false
+        }
+        skeletonDataSource.endLoading()
+        return true
+    }
+    
+    /// Ends loading and applies snapshot if the current dataSource is a SkeletonDiffableTableViewDataSource
+    /// - Parameters:
+    ///   - snapshot: The snapshot to apply
+    ///   - animatingDifferences: Whether to animate the changes
+    ///   - completion: Completion closure
+    /// - Returns: true if operation was successful, false if dataSource is not a skeleton diffable dataSource
+    @discardableResult
+    func endSkeletonLoadingAndApply<SectionID: Hashable, ItemID: Hashable>(
+        _ snapshot: NSDiffableDataSourceSnapshot<SectionID, ItemID>,
+        animatingDifferences: Bool = true,
+        completion: (() -> Void)? = nil) -> Bool {
+        
+        guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<SectionID, ItemID> else {
+            return false
+        }
+        skeletonDataSource.endLoadingAndApply(snapshot, animatingDifferences: animatingDifferences, completion: completion)
+        return true
+    }
+    
+    /// Resets and shows skeleton if the current dataSource is a SkeletonDiffableTableViewDataSource
+    /// - Parameters:
+    ///   - keepSections: Whether to preserve existing sections
+    ///   - showSkeleton: Whether to show skeleton immediately
+    ///   - animatingDifferences: Whether to animate the transition
+    /// - Returns: true if operation was successful, false if dataSource is not a skeleton diffable dataSource
+    @discardableResult
+    func resetAndShowSkeleton(keepSections: Bool = true,
+                             showSkeleton: Bool = true,
+                             animatingDifferences: Bool = false) -> Bool {
+        guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<AnyHashable, AnyHashable> else {
+            return false
+        }
+        skeletonDataSource.resetAndShowSkeleton(keepSections: keepSections,
+                                               showSkeleton: showSkeleton,
+                                               animatingDifferences: animatingDifferences)
+        return true
+    }
+    
+    /// Checks if the current dataSource is in loading state
+    var isSkeletonLoading: Bool {
+        guard let skeletonDataSource = dataSource as? SkeletonDiffableTableViewDataSource<AnyHashable, AnyHashable> else {
+            return false
+        }
+        return skeletonDataSource.isLoading
     }
 }
 

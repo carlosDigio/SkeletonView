@@ -228,7 +228,70 @@ applySnapshot(_:animatingDifferences:completion:)
 resetAndShowSkeleton(keepSections:showSkeleton:animatingDifferences:)
 configurePlaceholderCell // Configura celda para placeholders inline
 ```
-> Nota: placeholders inline desactivados por defecto. iOS/tvOS 13+.
+
+#### 🎨 Personalización de colores del skeleton con Diffable Data Source
+
+Cuando uses `SkeletonDiffableTableViewDataSource` o `SkeletonDiffableCollectionViewDataSource`, puedes personalizar la apariencia del skeleton de varias formas:
+
+**1. Usando apariencia global:**
+```swift
+// Establecer color por defecto para todos los skeletons
+SkeletonAppearance.default.tintColor = .systemBlue
+
+// Establecer gradiente personalizado
+SkeletonAppearance.default.gradient = SkeletonGradient(baseColor: .systemGreen)
+```
+
+**2. Personalización por vista al mostrar el skeleton:**
+```swift
+// Después de llamar dataSource.beginLoading()
+tableView.showAnimatedSkeleton(usingColor: .systemRed)
+// o
+collectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(colors: [.blue, .cyan]))
+```
+
+**3. Para placeholders inline:**
+```swift
+dataSource.configurePlaceholderCell = { tableView, indexPath in
+    let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    cell.isSkeletonable = true
+    cell.backgroundColor = .systemGray5  // Fondo personalizado
+    return cell
+}
+```
+
+#### 🚀 Métodos de Acceso Convenientes (¡NUEVO!)
+
+Ahora puedes controlar la carga del skeleton directamente desde UITableView/UICollectionView sin necesidad de guardar referencias al dataSource:
+
+```swift
+// Configuración (igual que antes)
+let dataSource = tableView.makeSkeletonDiffableDataSource { ... }
+
+// ✨ NUEVO: Acceso directo desde tableView/collectionView
+tableView.beginSkeletonLoading()                    // Iniciar carga y mostrar skeleton
+tableView.endSkeletonLoading()                      // Terminar carga solamente
+tableView.endSkeletonLoadingAndApply(snapshot)      // Terminar carga y aplicar datos
+tableView.resetAndShowSkeleton()                    // Reiniciar para pull-to-refresh
+let isLoading = tableView.isSkeletonLoading          // Verificar estado de carga
+
+// Funciona idénticamente para UICollectionView
+collectionView.beginSkeletonLoading()
+collectionView.endSkeletonLoadingAndApply(snapshot)
+```
+
+> **Beneficios:**
+> * No necesitas guardar referencias al dataSource
+> * API más limpia e intuitiva
+> * Consistente entre UITableView y UICollectionView
+> * Devuelve `Bool` para indicar éxito (true si usa skeleton diffable dataSource)
+
+> Notas:
+> * Placeholders inline desactivados por defecto. Pasa `useInlinePlaceholders: true` al crear.
+> * Mantienen el layout de secciones y headers visibles mientras anima el shimmer del skeleton.
+> * `resetAndShowSkeleton` reinicia un ciclo de carga (limpia elementos, opcionalmente preserva secciones, muestra skeleton, aplica snapshot vacío).
+> * La personalización de colores funciona tanto con placeholders inline como con el modo de overlay tradicional del skeleton.
+> * Solo iOS/tvOS 13+.
 
 También puedes esqueletizar headers y footers implementando `SkeletonTableViewDelegate`.
 ```swift

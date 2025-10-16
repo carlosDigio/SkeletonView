@@ -57,11 +57,6 @@ extension SkeletonCollectionDataSource: UITableViewDataSource {
             }
             
             let fakeCell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath)
-            if fakeCell == nil {
-                tableView.register(UITableViewCell.self, forCellReuseIdentifier: "DefaultTableViewCell")
-                return tableView.dequeueReusableCell(withIdentifier: "DefaultTableViewCell", for: indexPath)
-            }
-
             originalTableViewDataSource?.collectionSkeletonView(tableView, prepareCellForSkeleton: fakeCell, at: indexPath)
             skeletonizeViewIfContainerSkeletonIsActive(container: tableView, view: fakeCell)
             return fakeCell
@@ -102,16 +97,11 @@ extension SkeletonCollectionDataSource: UICollectionViewDataSource {
             }
             
             let fakeCell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath)
-            if fakeCell == nil {
-                collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "DefaultCollectionViewCell")
-                return collectionView.dequeueReusableCell(withReuseIdentifier: "DefaultCollectionViewCell", for: indexPath)
-            }
-
             originalCollectionViewDataSource?.collectionSkeletonView(collectionView, prepareCellForSkeleton: fakeCell, at: indexPath)
             skeletonizeViewIfContainerSkeletonIsActive(container: collectionView, view: fakeCell)
             return fakeCell
         }
-
+        
         originalCollectionViewDataSource?.collectionSkeletonView(collectionView, prepareCellForSkeleton: cell, at: indexPath)
         skeletonizeViewIfContainerSkeletonIsActive(container: collectionView, view: cell)
         return cell

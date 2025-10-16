@@ -273,7 +273,44 @@ applySnapshot(_:animatingDifferences:completion:)
 resetAndShowSkeleton(keepSections:showSkeleton:animatingDifferences:)
 configurePlaceholderCell // inline placeholder 커스터마이징
 ```
-> 메모: inline placeholders 기본 비활성 (useInlinePlaceholders: true 필요), iOS/tvOS 13+.
+
+#### 🎨 Diffable Data Source에서 skeleton 색상 커스터마이징
+
+`SkeletonDiffableTableViewDataSource` 또는 `SkeletonDiffableCollectionViewDataSource`를 사용할 때, skeleton의 모양을 여러 방법으로 커스터마이징할 수 있습니다:
+
+**1. 전역 모양 사용:**
+```swift
+// 모든 skeleton의 기본 색상 설정
+SkeletonAppearance.default.tintColor = .systemBlue
+
+// 커스텀 그라디언트 설정
+SkeletonAppearance.default.gradient = SkeletonGradient(baseColor: .systemGreen)
+```
+
+**2. skeleton을 표시할 때 뷰별 커스터마이징:**
+```swift
+// dataSource.beginLoading() 호출 후
+tableView.showAnimatedSkeleton(usingColor: .systemRed)
+// 또는
+collectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(colors: [.blue, .cyan]))
+```
+
+**3. inline placeholder용:**
+```swift
+dataSource.configurePlaceholderCell = { tableView, indexPath in
+    let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    cell.isSkeletonable = true
+    cell.backgroundColor = .systemGray5  // 커스텀 배경
+    return cell
+}
+```
+
+> 메모:
+> * Inline placeholders는 기본적으로 비활성화됩니다. 생성시 `useInlinePlaceholders: true`를 전달하세요.
+> * skeleton shimmer가 애니메이션되는 동안 섹션 레이아웃과 헤더를 보이게 유지합니다.
+> * `resetAndShowSkeleton`은 로딩 사이클을 재시작합니다 (아이템 클리어, 선택적으로 섹션 보존, skeleton 표시, 빈 snapshot 적용).
+> * 색상 커스터마이징은 inline placeholder와 전통적인 skeleton overlay 모드 모두에서 작동합니다.
+> * iOS/tvOS 13+ 전용.
 
 ### 📰 Multiline text
 
