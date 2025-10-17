@@ -50,16 +50,29 @@ public protocol AnySkeletonDiffableCollectionDataSource: SkeletonCollectionViewD
 
 @available(iOS 13.0, tvOS 13.0, *)
 public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable, ItemID: Hashable>: UICollectionViewDiffableDataSource<SectionID, ItemID>, SkeletonCollectionViewDataSource, AnySkeletonDiffableCollectionDataSource {
-    /// Indica si el collection está en estado de carga (skeleton visible o placeholders inline).
+    /// Indicates whether the collection is currently in loading state (skeleton visible or inline placeholders).
     public private(set) var isLoading: Bool = false
-    /// Número de items placeholder inline cuando se utilizan placeholders inline en lugar de depender únicamente del datasource dummy de skeleton.
+    /// Number of inline placeholder items when using inline placeholders instead of relying only on the skeleton dummy data source.
     private var placeholderItemCount: Int
-    /// Toggle para habilitar items placeholder inline mientras se carga y el snapshot diffable está vacío.
+    /// Toggle to enable inline placeholder items while loading and the diffable snapshot is empty.
     private let useInlinePlaceholders: Bool
     /// Weak reference to avoid ambiguity with superclass API "collectionView" symbol.
     private weak var hostCollectionViewRef: UICollectionView?
-    /// Delegado para personalizar comportamiento skeleton.
+    /// Delegate to customize skeleton behavior.
     public weak var skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate?
+    /// Optional sentinel section to prevent crashes in layouts that do not tolerate 0 sections (iOS 18 enforces this more strictly).
+    private var sentinelSection: SectionID?
+    /// Optional closure to dynamically generate a sentinel section if one was not explicitly configured.
+    private var sentinelProvider: (() -> SectionID)?
+    /// When true, if the snapshot is empty it reuses previous sections from the last known snapshot before adding a sentinel.
+    public var autoPreservePreviousSectionsOnEmptySnapshot: Bool = true
+    /// Configure a sentinel section that will be added if the snapshot is empty and the layout does not accept 0 sections.
+    public func configureSentinelSection(_ section: SectionID) { sentinelSection = section }
+    /// Configure a dynamic provider for a sentinel section.
+    public func configureAutoSentinel(using provider: @escaping () -> SectionID) { sentinelProvider = provider }
+    // Added properties to control re-entrancy of applySnapshot
+    private var isApplyingDiffable: Bool = false
+    private var pendingSnapshot: NSDiffableDataSourceSnapshot<SectionID, ItemID>?
 
     /// Modo inline placeholders activo? Expuesto para lógica que evita instalar dummy data source.
     public var usesInlinePlaceholders: Bool { useInlinePlaceholders }
@@ -95,7 +108,7 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
             if useInlinePlaceholders {
                 // For inline placeholders, we just need to reload to show placeholder cells
                 let empty = NSDiffableDataSourceSnapshot<SectionID, ItemID>()
-                apply(empty, animatingDifferences: false)
+                apply(empty, animatingDifferences: true)
             } else {
                 // For traditional skeleton overlay, show it directly
                 hostCollectionViewRef?.showAnimatedSkeleton()
@@ -141,18 +154,57 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     public func applySnapshot(_ snapshot: NSDiffableDataSourceSnapshot<SectionID, ItemID>,
                               animatingDifferences: Bool = true,
                               completion: (() -> Void)? = nil) {
+        // Re-entry: queue the latest snapshot and exit.
+        if isApplyingDiffable {
+            pendingSnapshot = snapshot
+            return
+        }
+        isApplyingDiffable = true
         let work = { [weak self] in
             guard let self = self else { return }
-            // Asegurarnos de que el collectionView tenga este diffable como dataSource antes de aplicar
-            if let cv = self.hostCollectionViewRef, cv.dataSource !== self {
-                cv.dataSource = self
+            if let cv = self.hostCollectionViewRef, cv.dataSource !== self { cv.dataSource = self }
+            var finalSnapshot = snapshot
+            let hadItemsNoSections = finalSnapshot.numberOfItems > 0 && finalSnapshot.sectionIdentifiers.isEmpty
+            if hadItemsNoSections {
+                if let section = self.sentinelSection ?? self.sentinelProvider?() ?? self.snapshot().sectionIdentifiers.first {
+                    var rebuilt = NSDiffableDataSourceSnapshot<SectionID, ItemID>()
+                    rebuilt.appendSections([section])
+                    rebuilt.appendItems(finalSnapshot.itemIdentifiers, toSection: section)
+                    finalSnapshot = rebuilt
+                } else {
+                    // No valid section -> discard items to avoid inconsistent state.
+                    #if DEBUG
+                    print("[SkeletonDiffable] Dropping items without section. Applying empty snapshot to avoid crash.")
+                    #endif
+                    finalSnapshot = NSDiffableDataSourceSnapshot<SectionID, ItemID>()
+                }
             }
-            self.apply(snapshot, animatingDifferences: animatingDifferences) { [weak self] in
+            if finalSnapshot.sectionIdentifiers.isEmpty && finalSnapshot.numberOfItems == 0 && self.layoutRequiresAtLeastOneSection() {
+                if let sentinel = self.sentinelSection ?? self.sentinelProvider?() {
+                    finalSnapshot.appendSections([sentinel])
+                } else if self.autoPreservePreviousSectionsOnEmptySnapshot {
+                    let previousSections = self.snapshot().sectionIdentifiers
+                    if !previousSections.isEmpty { finalSnapshot.appendSections(previousSections) }
+                }
+            }
+            self.apply(finalSnapshot, animatingDifferences: animatingDifferences) { [weak self] in
                 guard let self = self else { return }
-                let isEmpty = snapshot.numberOfItems == 0
+                let isEmpty = finalSnapshot.numberOfItems == 0
                 if self.isLoading && !isEmpty { self.isLoading = false }
-                if !self.isLoading { self.hostCollectionViewRef?.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.15)) }
-                completion?()
+                // Move hideSkeleton outside diffable's internal lock.
+                if !self.isLoading {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.hostCollectionViewRef?.hideSkeleton(reloadDataAfter: false)
+                    }
+                }
+                self.isApplyingDiffable = false
+                if let next = self.pendingSnapshot {
+                    self.pendingSnapshot = nil
+                    // Apply next without animation to avoid visual cascade.
+                    self.applySnapshot(next, animatingDifferences: true, completion: completion)
+                } else {
+                    completion?()
+                }
             }
         }
         if Thread.isMainThread { work() } else { DispatchQueue.main.async(execute: work) }
@@ -164,7 +216,7 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     // Enable via `useInlinePlaceholders: true` and optionally customize with `skeletonDelegate`.
     public override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if useInlinePlaceholders && isLoading && snapshot().numberOfItems == 0 {
-            // Pregunta primero al delegado por el número de items placeholder.
+            // Ask delegate first for number of placeholder items.
             let delegatedCount = skeletonDelegate?.skeletonDiffableDataSource(self, numberOfPlaceholderItemsIn: section, in: collectionView)
             return delegatedCount ?? placeholderItemCount
         }
@@ -218,6 +270,13 @@ public final class SkeletonDiffableCollectionViewDataSource<SectionID: Hashable,
     public func collectionSkeletonView(_ skeletonView: UICollectionView, prepareViewForSkeleton view: UICollectionReusableView, at indexPath: IndexPath) {
         skeletonDelegate?.skeletonDiffableDataSource(self, prepareViewForSkeleton: view, at: indexPath, in: skeletonView)
     }
+
+    /// Determina si el layout actual requiere al menos una sección para evitar crash en snapshots vacíos (principalmente compositional layouts en iOS 18+).
+    private func layoutRequiresAtLeastOneSection() -> Bool {
+        guard let cv = hostCollectionViewRef else { return false }
+        // Compositional layouts are the most strict. Add more types here if needed later.
+        return cv.collectionViewLayout is UICollectionViewCompositionalLayout
+    }
 }
 
 @available(iOS 13.0, tvOS 13.0, *)
@@ -236,6 +295,71 @@ public extension UICollectionView {
                                                                              supplementaryViewProvider: supplementaryViewProvider,
                                                                              skeletonDelegate: skeletonDelegate)
         self.dataSource = ds
+        return ds
+    }
+    
+    /// Factory that auto-configures a sentinel section if SectionID supports string literal initialization and the layout is compositional.
+    @available(iOS 13.0, tvOS 13.0, *)
+    func makeAutoSkeletonDiffableDataSource<SectionID: Hashable & ExpressibleByStringLiteral, ItemID: Hashable>(
+        placeholderItems: Int = 8,
+        useInlinePlaceholders: Bool = false,
+        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+        supplementaryViewProvider: UICollectionViewDiffableDataSource<SectionID, ItemID>.SupplementaryViewProvider? = nil,
+        skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate? = nil
+    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+        let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
+                                                                             placeholderItemCount: placeholderItems,
+                                                                             useInlinePlaceholders: useInlinePlaceholders,
+                                                                             cellProvider: cellProvider,
+                                                                             supplementaryViewProvider: supplementaryViewProvider,
+                                                                             skeletonDelegate: skeletonDelegate)
+        self.dataSource = ds
+        if self.collectionViewLayout is UICollectionViewCompositionalLayout {
+            ds.configureSentinelSection("SkeletonAutoSentinel")
+        }
+        return ds
+    }
+
+    /// Factory that enables automatic preservation of previous sections on empty snapshots.
+    @available(iOS 13.0, tvOS 13.0, *)
+    func makeSkeletonDiffableDataSourceWithAutoPreserve<SectionID: Hashable, ItemID: Hashable>(
+        placeholderItems: Int = 8,
+        useInlinePlaceholders: Bool = false,
+        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+        supplementaryViewProvider: UICollectionViewDiffableDataSource<SectionID, ItemID>.SupplementaryViewProvider? = nil,
+        skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate? = nil
+    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+        let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
+                                                                             placeholderItemCount: placeholderItems,
+                                                                             useInlinePlaceholders: useInlinePlaceholders,
+                                                                             cellProvider: cellProvider,
+                                                                             supplementaryViewProvider: supplementaryViewProvider,
+                                                                             skeletonDelegate: skeletonDelegate)
+        self.dataSource = ds
+        ds.autoPreservePreviousSectionsOnEmptySnapshot = true
+        return ds
+    }
+
+    /// Factory that sets a dynamic provider to generate a sentinel section if the snapshot is empty in a compositional layout.
+    @available(iOS 13.0, tvOS 13.0, *)
+    func makeSkeletonDiffableDataSourceWithDynamicSentinel<SectionID: Hashable, ItemID: Hashable>(
+        placeholderItems: Int = 8,
+        useInlinePlaceholders: Bool = false,
+        dynamicSentinel: @escaping () -> SectionID,
+        cellProvider: @escaping UICollectionViewDiffableDataSource<SectionID, ItemID>.CellProvider,
+        supplementaryViewProvider: UICollectionViewDiffableDataSource<SectionID, ItemID>.SupplementaryViewProvider? = nil,
+        skeletonDelegate: SkeletonDiffableCollectionViewDataSourceDelegate? = nil
+    ) -> SkeletonDiffableCollectionViewDataSource<SectionID, ItemID> {
+        let ds = SkeletonDiffableCollectionViewDataSource<SectionID, ItemID>(collectionView: self,
+                                                                             placeholderItemCount: placeholderItems,
+                                                                             useInlinePlaceholders: useInlinePlaceholders,
+                                                                             cellProvider: cellProvider,
+                                                                             supplementaryViewProvider: supplementaryViewProvider,
+                                                                             skeletonDelegate: skeletonDelegate)
+        self.dataSource = ds
+        if self.collectionViewLayout is UICollectionViewCompositionalLayout {
+            ds.configureAutoSentinel(using: dynamicSentinel)
+        }
         return ds
     }
     
