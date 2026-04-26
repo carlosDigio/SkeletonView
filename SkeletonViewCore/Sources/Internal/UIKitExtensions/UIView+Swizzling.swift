@@ -15,62 +15,66 @@ import UIKit
 
 extension UIView {
 
-    @objc func skeletonLayoutSubviews() {
-        guard Thread.isMainThread else { return }
-        skeletonLayoutSubviews()
-        guard sk.isSkeletonActive else { return }
-        layoutSkeletonIfNeeded()
-    }
+	private static var _isLayoutingSkeletonIfNeeded = false
 
-    @objc func skeletonTraitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        skeletonTraitCollectionDidChange(previousTraitCollection)
-        guard isSkeletonable, sk.isSkeletonActive, let config = _currentSkeletonConfig else { return }
-        updateSkeleton(skeletonConfig: config)
-    }
-    
-    func swizzleLayoutSubviews() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            DispatchQueue.once(token: "UIView.SkeletonView.swizzleLayoutSubviews") {
-                swizzle(selector: #selector(UIView.layoutSubviews),
-                        with: #selector(UIView.skeletonLayoutSubviews),
-                        inClass: UIView.self,
-                        usingClass: UIView.self)
-                self.layoutSkeletonIfNeeded()
-            }
-        }
-    }
-    
-    func unSwizzleLayoutSubviews() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            DispatchQueue.removeOnce(token: "UIView.SkeletonView.swizzleLayoutSubviews") {
-                swizzle(selector: #selector(UIView.skeletonLayoutSubviews),
-                        with: #selector(UIView.layoutSubviews),
-                        inClass: UIView.self,
-                        usingClass: UIView.self)
-            }
-        }
-    }
-    
-    func swizzleTraitCollectionDidChange() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            DispatchQueue.once(token: "UIView.SkeletonView.swizzleTraitCollectionDidChange") {
-                swizzle(selector: #selector(UIView.traitCollectionDidChange(_:)),
-                        with: #selector(UIView.skeletonTraitCollectionDidChange(_:)),
-                        inClass: UIView.self,
-                        usingClass: UIView.self)
-            }
-        }
-    }
-    
-    func unSwizzleTraitCollectionDidChange() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            DispatchQueue.removeOnce(token: "UIView.SkeletonView.swizzleTraitCollectionDidChange") {
-                swizzle(selector: #selector(UIView.skeletonTraitCollectionDidChange(_:)),
-                        with: #selector(UIView.traitCollectionDidChange(_:)),
-                        inClass: UIView.self,
-                        usingClass: UIView.self)
-            }
-        }
-    }
-    
+	@objc func skeletonLayoutSubviews() {
+		guard Thread.isMainThread else { return }
+		skeletonLayoutSubviews()
+		
+		guard sk.isSkeletonActive, !UIView._isLayoutingSkeletonIfNeeded else { return }
+		UIView._isLayoutingSkeletonIfNeeded = true
+		layoutSkeletonIfNeeded()
+		UIView._isLayoutingSkeletonIfNeeded = false
+	}
+
+	@objc func skeletonTraitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+		skeletonTraitCollectionDidChange(previousTraitCollection)
+		guard isSkeletonable, sk.isSkeletonActive, let config = _currentSkeletonConfig else { return }
+		updateSkeleton(skeletonConfig: config)
+	}
+	
+	func swizzleLayoutSubviews() {
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+			DispatchQueue.once(token: "UIView.SkeletonView.swizzleLayoutSubviews") {
+				swizzle(selector: #selector(UIView.layoutSubviews),
+						with: #selector(UIView.skeletonLayoutSubviews),
+						inClass: UIView.self,
+						usingClass: UIView.self)
+				self.layoutSkeletonIfNeeded()
+			}
+		}
+	}
+	
+	func unSwizzleLayoutSubviews() {
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+			DispatchQueue.removeOnce(token: "UIView.SkeletonView.swizzleLayoutSubviews") {
+				swizzle(selector: #selector(UIView.skeletonLayoutSubviews),
+						with: #selector(UIView.layoutSubviews),
+						inClass: UIView.self,
+						usingClass: UIView.self)
+			}
+		}
+	}
+	
+	func swizzleTraitCollectionDidChange() {
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+			DispatchQueue.once(token: "UIView.SkeletonView.swizzleTraitCollectionDidChange") {
+				swizzle(selector: #selector(UIView.traitCollectionDidChange(_:)),
+						with: #selector(UIView.skeletonTraitCollectionDidChange(_:)),
+						inClass: UIView.self,
+						usingClass: UIView.self)
+			}
+		}
+	}
+	
+	func unSwizzleTraitCollectionDidChange() {
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+			DispatchQueue.removeOnce(token: "UIView.SkeletonView.swizzleTraitCollectionDidChange") {
+				swizzle(selector: #selector(UIView.skeletonTraitCollectionDidChange(_:)),
+						with: #selector(UIView.traitCollectionDidChange(_:)),
+						inClass: UIView.self,
+						usingClass: UIView.self)
+			}
+		}
+	}	
 }
